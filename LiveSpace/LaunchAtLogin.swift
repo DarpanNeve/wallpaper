@@ -6,10 +6,12 @@ enum LaunchAtLogin {
     }
 
     static func setEnabled(_ enabled: Bool) {
+        DebugLog.write("[LaunchAtLogin] setEnabled(\(enabled)) called, current status=\(SMAppService.mainApp.status.rawValue) bundlePath=\(Bundle.main.bundlePath)")
         do {
             if enabled {
                 if SMAppService.mainApp.status != .enabled {
                     try SMAppService.mainApp.register()
+                    DebugLog.write("[LaunchAtLogin] register() succeeded, new status=\(SMAppService.mainApp.status.rawValue)")
                 }
             } else {
                 if SMAppService.mainApp.status == .enabled {
@@ -17,7 +19,7 @@ enum LaunchAtLogin {
                 }
             }
         } catch {
-            DebugLog.write("LaunchAtLogin toggle failed: \(error)")
+            DebugLog.write("[LaunchAtLogin] toggle FAILED: \(error)")
         }
     }
 }
