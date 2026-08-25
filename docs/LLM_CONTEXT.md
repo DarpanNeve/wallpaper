@@ -1,0 +1,94 @@
+# LiveSpace — LLM Context
+
+macOS live wallpaper app. Plays a rotating playlist of local videos as the desktop background, with best-effort lock-screen sync. Ships as a signed `.dmg`.
+
+## Xcode project
+
+Managed via `xcodegen` (`project.yml` at repo root, NOT hand-edited in Xcode). After any source file add/remove or build-setting change:
+
+```bash
+xcodegen generate
+xcodebuild -project LiveSpace.xcodeproj -scheme LiveSpace -configuration Debug build
+```
+
+`LiveSpace.xcodeproj` is generated output — don't hand-edit it, edit `project.yml`.
+
+Signing: team `CL53882GFX` (the real paid team — the "N7U58LXWC7"-labeled certs in this user's keychain are cosmetically named but actually issued under CL53882GFX; confirmed via `openssl x509 -subject`, OU field is ground truth). No Developer ID Application cert exists yet — Debug/Release both sign with "Apple Development", so distributed dmg needs right-click→Open once (Gatekeeper).
+
+## Targets
+
+- **LiveSpace** (app) — the actual product. Everything below lives here unless noted.
+- **LiveSpaceSaver** (`.saver` bundle, `ScreenSaverView` subclass) — built, embeds into the app's Resources, but **not wired into the active feature set**. Discovered mid-project that macOS's "Show as wallpaper" toggle only works for Apple's own built-in screensavers, not third-party `.saver` content — so this doesn't achieve desktop wallpaper. Left in place as a dormant option (installable via Settings) in case classic screensaver-while-idle behavior is ever wanted, but the real desktop wallpaper mechanism is the `NSWindow` overlay (below).
+- **LiveSpaceWallpaperExtension** — **removed from project.yml, source files kept on disk** (`LiveSpaceWallpaperExtension/`). Was a from-scratch reverse-engineered ExtensionKit `.appex` targeting the private `com.apple.wallpaper` extension point, built to properly integrate with the lock screen the way Apple's own Aerial extensions and the competitor app Wallspace do. Got as far as: extension registers with the OS (needs `com.apple.security.app-sandbox` entitlement — that was the actual gate, not a special private entitlement), and `WallpaperAgent` connects to it. Blocked by a real tooling gap: `ExtensionFoundation`'s `AppExtension`/`PrimitiveAppExtensionScene` API has zero compile-time SDK artifacts (no `.tbd`, no `.swiftmodule`) in this machine's Xcode 26.6 install, even though the runtime framework exists in the OS's dyld shared cache. Wallspace's own extension was built with Xcode 26.2, which apparently had proper SDK support. Reviving this needs a different Xcode/SDK, not more code. Full reverse-engineered `WallpaperExtensionXPCProtocol` (21 methods, extracted from Wallspace's shipped binary via `nm`/`otool -ov`) is preserved in `WallpaperExtensionXPCProtocol.swift` if resumed later.
+
+## Desktop wallpaper — how it actually works
+
+No public API exists for third-party video wallpapers on macOS (confirmed via research — this is universal, every app in this category including Plash and Wallspace does the same thing).
+
+- `WallpaperWindow.swift` — one borderless `NSWindow` per `NSScreen`, positioned at `desktopIconLevel - 1` (behind icons, above the true desktop picture layer), playing an `AVQueuePlayer` + `AVPlayerLooper` via `AVPlayerLayer`. Auto-pauses when `occlusionState` isn't `.visible` (fullscreen app covering it, hidden Space) — real battery win, don't remove.
+- `WallpaperEngine.swift` — owns the per-screen windows, rebuilds on `NSApplication.didChangeScreenParametersNotification`, exposes `pauseAll()`/`resumeAll()` for lock/unlock.
+- `RotationController.swift` — single `Timer` (20s tick) drives: reads `~/LiveWallpapers` (or user-chosen folder) fresh every tick via `ConfigStore.playlist(for:)`, advances `currentIndex` when `intervalSeconds` has elapsed since `lastAdvanced`, reloads video + syncs poster/lock-screen only when the index or playlist actually changed (cheap no-op otherwise). Also reachable via `RotationTrigger.shared.forceTick` for instant manual jumps (see `AppState.jumpToVideo`).
+- **Menu bar/Dock chrome staying in sync** (`PosterFrameSync.swift`) — the real system Desktop Picture (`NSWorkspace.setDesktopImageURL`) is kept updated with a still frame extracted from whatever video is currently playing, every rotation. This is why the menu bar/Dock vibrancy shows *matching* colors instead of a stale unrelated wallpaper — a real limitation even Plash doesn't work around (confirmed via their own GitHub issues: "Plash is not actually a wallpaper... menu bar adapts its color from the actual system wallpaper"). **Keep the last-2-posters pruning logic in `pruneOldPosters`** — deleting the previous poster too eagerly (single-file prune, no buffer) caused a real race where the menu bar briefly referenced a deleted file. Poster set only prunes old files *after* confirming `setDesktopImageURL` succeeded on every screen.
+
+## Lock screen — fragile, opt-in, honestly described in the UI as "experimental"
+
+No public API. Mechanism: macOS caches a downloaded Apple Aerial wallpaper's `.mov` at `~/Library/Application Support/com.apple.wallpaper/aerials/videos/<id>.mov`. We overwrite that file's *content* with an HEVC-transcoded copy of the user's current video (same id, same path — the file macOS already has permission/reference to), back up the original once, and `killall WallpaperAgent WallpaperAerialsExtension` to force a reload.
+
+- `LockScreenSync.swift` — the swap/backup/restore logic. `HEVCTranscoder.swift` — transcodes to HEVC `.mov` via `AVAssetExportSession`, disk-cached by source path+mtime under `~/Library/Application Support/LiveSpace/HEVCCache/`.
+- **Requires the user to have already downloaded ≥1 Apple Aerial wallpaper** (System Settings → Wallpaper) — that's what seeds the slot we hijack. `LockScreenSync.hasDownloadedAerial()` checks for this and the UI surfaces a message if missing.
+- **Only works reliably right after a fresh `killall`.** Empirically found: video shows on lock screen only ~2-3% of the time if you just wait for the natural 5-minute rotation tick to kill/relaunch the extension — the extension appears to cache decoded content in memory and only re-reads from disk on relaunch. Fixed by `ScreenLockObserver.swift`, which listens for the `com.apple.screenIsLocked` distributed notification and forces a fresh `killall` (`LockScreenSync.refreshOnLock()`) at the exact moment of locking, not just periodically.
+- Even with a fresh reload, video may not appear *instantly* on lock — the lock screen shows a static frame first and only switches to live video after the system's screensaver idle-delay elapses (same delay as "Start Screen Saver after X minutes" in Screen Saver settings). We lower this system-wide value (`defaults -currentHost write com.apple.screensaver idleTime -int 5`) as a workaround — **this affects the user's regular unlocked-desktop screensaver too**, worth remembering if they complain about the screensaver triggering too fast while working.
+- Tried and abandoned patching `~/Library/Application Support/com.apple.wallpaper/Store/Index.plist` directly (the approach a reference open-source project uses) — on this exact macOS 26 (Tahoe) build, every "Idle" entry in that plist is just a generic `"default"` color-provider placeholder, unrelated to the actual Aerial/screensaver selection. That plist is not where the real selection state lives on this OS version; never found where it actually is. Don't re-attempt without new evidence.
+- Cold-boot poster (`/Library/Caches/Desktop Pictures/<GeneratedUID>/lockscreen.png`, matching what the reference project does) is implemented in `LockScreenSync.updateColdBootPoster` but **silently no-ops** — the parent directory is root-owned (`/Library/Caches/Desktop Pictures/`, mode 755) and only pre-exists for users macOS has already created a per-UID folder for; we can't `mkdir` it without root. Non-fatal, just means that specific fallback poster never updates for this user. Not worth chasing further.
+
+## Shared utilities
+
+- `ConfigStore.swift` / `PlaylistConfig.swift` — single JSON file at `~/Library/Application Support/LiveSpace/config.json`. Not sandboxed, not App-Group-based — deliberately simple since desktop app and lock-screen sync all run in the same process. When adding a new persisted field: add to `PlaylistConfig`, update the custom `init(from:)` decoder with `decodeIfPresent(...) ?? default` (NOT plain `decode`) for backward compatibility with configs written before the field existed, and add it to `.default`.
+- `DebugLog.swift` — plain-file async logger at `~/Library/Application Support/LiveSpace/debug.log`. **Use this over `NSLog`/`os_log`** for anything you'll need to actually inspect — the unified logging system (`log show`) proved unreliable for this app's own messages during development (queries with `--predicate` and grepping for our log text repeatedly returned nothing even when the code definitely ran, for reasons never fully diagnosed — possibly OS log level filtering or subsystem defaults). `DebugLog` sidesteps that entirely.
+- `WindowOpener.swift` — AppKit-owned Settings window shown/reopened from the menu bar. **Not** SwiftUI `WindowGroup`/`openWindow` — that was tried first and `ContentView.onAppear` never fired at all (root cause never fully diagnosed, suspected conflict with the custom `NSApplicationDelegate` + early `NSStatusItem` creation). `AppDelegate` now owns the single `NSHostingController`-wrapped window directly and the app's `Scene` is just an empty `Settings { EmptyView() }` placeholder to satisfy `App`'s requirements.
+- `RotationTrigger.swift` — shared closure singleton letting `AppState` force an immediate rotation tick (used by the "jump to video" picker) without AppState needing a direct reference to `RotationController`.
+- `LaunchAtLogin.swift` — thin `SMAppService.mainApp` wrapper. Registered automatically on first-ever launch (`UserDefaults` flag gates it to once).
+- `MenuBarController.swift` — `NSStatusItem` (sparkles icon): Open Settings, Launch at Login toggle, Quit.
+
+## Settings UI (`ContentView.swift`)
+
+Redesigned once already — original GroupBox-based layout had real bugs, not just aesthetics:
+- `Slider(value:in:) { Text("Interval") }` rendered that trailing label **inline next to the track** on macOS (unlike iOS where it's hidden), producing a stray "Interval" word in the middle of the row. Fix: use the label-less `Slider(value:in:step:)` initializer, never the labeled one, when a preceding `Text` already describes the control.
+- Long caption `Text`s were truncating with "…" instead of wrapping — the surrounding `.frame(minWidth:)` on the container plus no explicit wrap-forcing on the `Text` let SwiftUI pick a single-line intrinsic layout. Fix: `.fixedSize(horizontal: false, vertical: true)` + `.frame(maxWidth: .infinity, alignment: .leading)` on caption text.
+- No `ScrollView` originally — content could exceed the window's actual height with no way to reach it (no crash, just silently unreachable UI). Now the whole body is wrapped in one.
+- Custom `section(_:content:)` view builder replaced `GroupBox` for consistent header styling (`.headline` title above a rounded `.quaternary` background card) — GroupBox's default macOS styling read as cramped/inconsistent.
+
+## Performance (measured, not estimated)
+
+Baseline via `top -pid <pid> -stats cpu,mem`, sampled over multiple 3-5s intervals while a video was actively visible on screen:
+- **~3.5-6.6% CPU**, ~50-65MB RAM — consistent across a normal 4K/25MB video and a heavier 4K/36MB video. Hardware (VideoToolbox) decode confirmed — software decode would read 30-80%+, so this is already efficient at the codec level; further gains had to come from *when* it runs, not per-frame cost.
+- Confirmed via live log correlation that `WallpaperWindow`'s occlusion-based pause and the lock/unlock pause (`WallpaperEngine.pauseAll/resumeAll`, wired in `AppDelegate` via `ScreenLockObserver`) actually fire and drop CPU to ~0% during those states — not just present in code, empirically verified against `debug.log` timestamps lining up with real lock/unlock events during a live session.
+- Rotation-check `Timer` interval: 5s → 20s, cuts background wakeups 4x for negligible loss of rotation precision.
+
+## Desktop widgets — investigated, likely not our bug
+
+User reported desktop widgets (Calendar/Weather, pinned via macOS Sonoma+ desktop widgets) sometimes not visible. Researched before touching window-level code (changing `WallpaperWindow`'s level without evidence risked making it worse). Finding: Apple's own documented behavior is that desktop widgets get hidden/dimmed whenever *any* app window is considered active, independent of third-party wallpaper apps — by design, only reappear via F11 or "click wallpaper to reveal desktop." Our window sits at `desktopIconLevel - 1` and explicitly never takes key/main focus (`canBecomeKey`/`canBecomeMain` both `false`), so it shouldn't trigger the same hiding heuristic a real foreground app would. Left as an open question — proposed isolation test (quit LiveSpace, see if widgets still vanish) to the user but no confirmed verdict yet. If revisited: don't guess at window-level changes without first confirming via that isolation test whether LiveSpace is actually the cause.
+
+## Known non-goals / things not to re-attempt without new information
+
+- Desktop "Show as wallpaper" native toggle for third-party `.saver` content — confirmed universally unsupported.
+- Direct Index.plist "Idle" patching for lock screen selection — confirmed not where selection state lives on this OS build.
+- Cold-boot poster directory creation without root — confirmed blocked by filesystem permissions.
+- Rapid lock/unlock cycling (within 1-5s) will almost always show the static lock-screen fallback even with the fix working correctly — `killall`-triggered process restart has real latency (extension relaunch + first-frame decode). Not a bug; test lock-screen behavior by waiting 10-15s before checking, confirmed this resolves the "sometimes static" complaint when tested properly.
+
+## Session history (chronological, condensed)
+
+1. Started with a `ScreenSaverView`-based `.saver` plugin as the whole plan — discovered partway through that the OS's "Show as wallpaper" toggle doesn't work for third-party savers at all (researched, confirmed via multiple sources including Apple's own forums). Pivoted to the `NSWindow` overlay approach instead, which is what every real app in this space actually does.
+2. Signing confusion: keychain had certs cosmetically labeled "N7U58LXWC7" that were actually issued under team `CL53882GFX` (verified via `openssl x509 -subject`, the OU field). Wasted a round-trip on this before checking the cert subject directly instead of trusting the CN string.
+3. Menu bar/Dock color mismatch (video plays but menu bar shows stale unrelated colors) — root-caused to `NSWorkspace.setDesktopImageURL` never being called for third-party overlays; fixed by `PosterFrameSync` extracting and setting a matching still frame every rotation. Found and fixed a real race in the first implementation where the previous poster file got deleted before the system finished reading it (menu bar briefly went black) — fixed by keeping a 2-poster buffer instead of single-file pruning.
+4. Lock screen: extensive investigation. First assumed the `.saver` plugin could show on lock via "Show screen saver on lock screen" — inconclusive/unreliable in testing. Found and read a real open-source project's exact mechanism (Aerial-slot file hijack + `Index.plist` patch). Implemented the file-hijack half; the `Index.plist` patch half turned out not to apply to this macOS build (every "Idle" entry is a generic color placeholder here, not an Aerial reference — the reference project's assumption didn't hold on this OS version). Then attempted the "real" fix: a from-scratch ExtensionKit `.appex` targeting `com.apple.wallpaper`, including live reverse-engineering of a competitor's (Wallspace) shipped binary via `nm`/`otool -ov` to recover the private `WallpaperExtensionXPCProtocol`'s 21 method signatures, and discovering the actual registration gate was the standard `com.apple.security.app-sandbox` entitlement (not a special private one). Got the extension registering and `WallpaperAgent` connecting to it, but blocked by a genuine SDK gap — `ExtensionFoundation`'s Swift API has no compile-time artifacts in this machine's Xcode 26.6 SDK. Parked, reverted to the simpler file-hijack approach, which does work well enough with the lock-triggered refresh (below).
+5. Found (via debug-log correlation, not guessing) that the file-hijack only showed video ~2-3% of the time because it only takes effect right after `killall WallpaperAgent WallpaperAerialsExtension`, and that was only happening once per 5-minute rotation tick — a random lock moment almost never landed in that few-second fresh window. Fixed with `ScreenLockObserver` listening for `com.apple.screenIsLocked` to force a fresh reload at the exact moment of locking.
+6. Settings window stopped responding to the menu bar's "Open Settings…" — traced to SwiftUI's `WindowGroup`/`@Environment(\.openWindow)` genuinely never firing `onAppear` on this app (root cause never fully nailed down, suspected interaction with the custom `NSApplicationDelegate` + early status-item creation). Rewrote to a fully AppKit-owned `NSWindow` + `NSHostingController`, which is deterministic and fixed it outright.
+7. Debugging methodology lesson: `log show --predicate` repeatedly failed to surface this app's own log lines even when the code definitely ran (confirmed via file-based logging catching what the unified log missed). Switched to `DebugLog` (plain file, `~/Library/Application Support/LiveSpace/debug.log`) for all future diagnostic work in this app — much more reliable to `cat`/`grep` directly than fighting `log show`'s filtering.
+8. Added power optimizations (occlusion-based + lock-based pause, longer rotation-timer interval) after the user explicitly asked to minimize battery/CPU impact — verified with real `top` measurements, not assumed.
+9. Added "jump to video" (`AppState.jumpToVideo` + `RotationTrigger` singleton) and "start each video at X%" (`startOffsetPercent` in `PlaylistConfig`, applied via `AVPlayerItem.seek` in `WallpaperWindow.setVideo`) per user request.
+10. Shipped two dmg builds — first before the menu bar fix/UI redesign/power work landed, second (current, in `~/Downloads/LiveSpace.dmg`) with everything above included.
+
+## Packaging
+
+`create-dmg` (installed via brew) → `build/LiveSpace.dmg`, also copied to `~/Downloads/LiveSpace.dmg` for the user. Release build via `xcodebuild -configuration Release`, then `create-dmg` against `build/DerivedData/Build/Products/Release/LiveSpace.app`. No custom background/layout beyond default icon positions.
