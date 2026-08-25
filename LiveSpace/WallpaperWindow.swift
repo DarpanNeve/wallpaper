@@ -10,8 +10,21 @@ private final class WallpaperHostView: NSView {
     }
 }
 
+private extension VideoRenderPattern {
+    var videoGravity: AVLayerVideoGravity {
+        switch self {
+        case .fill: return .resizeAspectFill
+        case .fit: return .resizeAspect
+        case .stretch: return .resize
+        }
+    }
+}
+
 final class WallpaperWindow: NSWindow {
     private static let darkModeDimOpacity: Float = 0.35
+
+    let screenID: String
+    var onEnded: (() -> Void)?
 
     private let queuePlayer = AVQueuePlayer()
     private let playerLayer = AVPlayerLayer()
@@ -20,6 +33,7 @@ final class WallpaperWindow: NSWindow {
     private var endObserver: NSObjectProtocol?
 
     init(screen: NSScreen) {
+        screenID = screen.stableID
         super.init(contentRect: screen.frame, styleMask: [.borderless], backing: .buffered, defer: false)
 
         let desktopIconLevel = Int(CGWindowLevelForKey(.desktopIconWindow))
@@ -57,12 +71,13 @@ final class WallpaperWindow: NSWindow {
         )
     }
 
-    func setVideo(url: URL, startOffsetPercent: Double = 0, loop: Bool = true, onEnded: (() -> Void)? = nil) {
+    func setVideo(url: URL, startOffsetPercent: Double = 0, loop: Bool = true, pattern: VideoRenderPattern = .fill) {
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
         }
         endObserver = nil
         looper = nil
+        playerLayer.videoGravity = pattern.videoGravity
 
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
@@ -79,7 +94,7 @@ final class WallpaperWindow: NSWindow {
                 queue: .main
             ) { [weak self] _ in
                 self?.endObserver = nil
-                onEnded?()
+                self?.onEnded?()
             }
         }
 

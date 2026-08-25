@@ -48,7 +48,11 @@ final class ConfigStore {
     }
 
     func playlist(for config: PlaylistConfig) -> [URL] {
-        let folderURL = URL(fileURLWithPath: config.folderPath, isDirectory: true)
+        playlist(inFolder: config.folderPath)
+    }
+
+    func playlist(inFolder folderPath: String) -> [URL] {
+        let folderURL = URL(fileURLWithPath: folderPath, isDirectory: true)
         guard let contents = try? FileManager.default.contentsOfDirectory(
             at: folderURL,
             includingPropertiesForKeys: nil,
