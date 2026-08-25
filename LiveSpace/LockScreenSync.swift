@@ -82,7 +82,6 @@ enum LockScreenSync {
         DebugLog.write("aerial slot swap succeeded")
         saveState(aerialPath: aerialSlot.path, backupPath: backupURL.path)
         updateColdBootPoster(videoURL: hevcSourceURL)
-        restartWallpaperAgent()
     }
 
     private static func updateColdBootPoster(videoURL: URL) {
