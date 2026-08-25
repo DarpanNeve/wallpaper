@@ -11,6 +11,7 @@ final class AppState: ObservableObject {
     @Published var lockScreenEnabled: Bool
     @Published var lockScreenStatus: String = ""
     @Published var startOffsetPercent: Double
+    @Published var rotateOnVideoEnd: Bool
     @Published var videoFileNames: [String] = []
     @Published var currentVideoIndex: Int = 0
 
@@ -22,6 +23,7 @@ final class AppState: ObservableObject {
         intervalMinutes = config.intervalSeconds / 60
         lockScreenEnabled = config.lockScreenEnabled
         startOffsetPercent = config.startOffsetPercent
+        rotateOnVideoEnd = config.rotateOnVideoEnd
         refreshVideoCount()
         refreshInstallStatus()
         refreshLockScreenStatus()
@@ -59,11 +61,16 @@ final class AppState: ObservableObject {
             config.intervalSeconds = self.intervalMinutes * 60
             config.lockScreenEnabled = self.lockScreenEnabled
             config.startOffsetPercent = self.startOffsetPercent
+            config.rotateOnVideoEnd = self.rotateOnVideoEnd
         }
         refreshVideoCount()
     }
 
     func startOffsetChanged() {
+        persist()
+    }
+
+    func rotateOnVideoEndToggled() {
         persist()
     }
 
@@ -75,6 +82,11 @@ final class AppState: ObservableObject {
             config.lastAdvanced = Date()
         }
         RotationTrigger.shared.forceTick?()
+    }
+
+    func nextVideo() {
+        guard !videoFileNames.isEmpty else { return }
+        jumpToVideo(index: (currentVideoIndex + 1) % videoFileNames.count)
     }
 
     func lockScreenToggled() {

@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         rotationController.start()
-        menuBarController = MenuBarController()
+        menuBarController = MenuBarController(state: state)
         showSettingsWindow()
         screenLockObserver = ScreenLockObserver(
             onLock: { [weak self] in

@@ -1,10 +1,13 @@
 import AppKit
 
+@MainActor
 final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let launchAtLoginItem: NSMenuItem
+    private let state: AppState
 
-    override init() {
+    init(state: AppState) {
+        self.state = state
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         launchAtLoginItem = NSMenuItem(
             title: "Launch at Login",
@@ -19,6 +22,7 @@ final class MenuBarController: NSObject {
 
         let menu = NSMenu()
         menu.addItem(withTitle: "Open Settings…", action: #selector(openSettings), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Next Video", action: #selector(nextVideo), keyEquivalent: "").target = self
         menu.addItem(.separator())
         launchAtLoginItem.target = self
         launchAtLoginItem.state = LaunchAtLogin.isEnabled ? .on : .off
@@ -30,6 +34,10 @@ final class MenuBarController: NSObject {
 
     @objc private func openSettings() {
         WindowOpener.shared.show()
+    }
+
+    @objc private func nextVideo() {
+        state.nextVideo()
     }
 
     @objc private func toggleLaunchAtLogin() {

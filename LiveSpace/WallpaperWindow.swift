@@ -1,10 +1,23 @@
 import AppKit
 import AVFoundation
 
+private final class WallpaperHostView: NSView {
+    var onEffectiveAppearanceChanged: (() -> Void)?
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        onEffectiveAppearanceChanged?()
+    }
+}
+
 final class WallpaperWindow: NSWindow {
+    private static let darkModeDimOpacity: Float = 0.35
+
     private let queuePlayer = AVQueuePlayer()
     private let playerLayer = AVPlayerLayer()
+    private let dimLayer = CALayer()
     private var looper: AVPlayerLooper?
+    private var endObserver: NSObjectProtocol?
 
     init(screen: NSScreen) {
         super.init(contentRect: screen.frame, styleMask: [.borderless], backing: .buffered, defer: false)
@@ -18,13 +31,20 @@ final class WallpaperWindow: NSWindow {
         isReleasedWhenClosed = false
         collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]
 
-        let hostView = NSView(frame: screen.frame)
+        let hostView = WallpaperHostView(frame: screen.frame)
         hostView.wantsLayer = true
         playerLayer.frame = hostView.bounds
         playerLayer.videoGravity = .resizeAspectFill
         playerLayer.player = queuePlayer
         hostView.layer?.addSublayer(playerLayer)
+
+        dimLayer.frame = hostView.bounds
+        dimLayer.backgroundColor = NSColor.black.cgColor
+        hostView.layer?.addSublayer(dimLayer)
+
+        hostView.onEffectiveAppearanceChanged = { [weak self] in self?.updateDimLayer() }
         contentView = hostView
+        updateDimLayer()
 
         setFrame(screen.frame, display: true)
         orderFrontRegardless()
@@ -37,11 +57,32 @@ final class WallpaperWindow: NSWindow {
         )
     }
 
-    func setVideo(url: URL, startOffsetPercent: Double = 0) {
+    func setVideo(url: URL, startOffsetPercent: Double = 0, loop: Bool = true, onEnded: (() -> Void)? = nil) {
+        if let endObserver {
+            NotificationCenter.default.removeObserver(endObserver)
+        }
+        endObserver = nil
+        looper = nil
+
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
         queuePlayer.isMuted = true
-        looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+
+        if loop {
+            looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+        } else {
+            queuePlayer.removeAllItems()
+            queuePlayer.insert(item, after: nil)
+            endObserver = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: item,
+                queue: .main
+            ) { [weak self] _ in
+                self?.endObserver = nil
+                onEnded?()
+            }
+        }
+
         if occlusionState.contains(.visible) {
             queuePlayer.play()
         }
@@ -61,6 +102,11 @@ final class WallpaperWindow: NSWindow {
     func resume() {
         guard occlusionState.contains(.visible) else { return }
         queuePlayer.play()
+    }
+
+    private func updateDimLayer() {
+        let isDarkMode = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        dimLayer.opacity = isDarkMode ? Self.darkModeDimOpacity : 0
     }
 
     @objc private func occlusionStateChanged() {

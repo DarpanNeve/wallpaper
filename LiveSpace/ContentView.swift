@@ -23,14 +23,20 @@ struct ContentView: View {
                 }
 
                 section("Rotation") {
+                    Toggle("Rotate when video ends", isOn: $state.rotateOnVideoEnd)
+                        .onChange(of: state.rotateOnVideoEnd) { _, _ in state.rotateOnVideoEndToggled() }
+                    caption("Each video plays once, then switches immediately to the next — instead of looping for a fixed interval.")
+
                     HStack(spacing: 12) {
                         Text("Change every")
                         Slider(value: $state.intervalMinutes, in: 1...180, step: 1)
+                            .disabled(state.rotateOnVideoEnd)
                             .onChange(of: state.intervalMinutes) { _, _ in state.intervalChanged() }
                         Text("\(Int(state.intervalMinutes)) min")
                             .frame(width: 56, alignment: .trailing)
                             .monospacedDigit()
                     }
+                    .opacity(state.rotateOnVideoEnd ? 0.4 : 1)
 
                     if !state.videoFileNames.isEmpty {
                         HStack(spacing: 12) {
@@ -44,6 +50,7 @@ struct ContentView: View {
                             .onChange(of: state.currentVideoIndex) { _, newValue in
                                 state.jumpToVideo(index: newValue)
                             }
+                            Button("Next Video") { state.nextVideo() }
                         }
                     }
 

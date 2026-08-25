@@ -7,6 +7,7 @@ struct PlaylistConfig: Codable, Equatable {
     var lastAdvanced: Date
     var lockScreenEnabled: Bool = false
     var startOffsetPercent: Double = 0
+    var rotateOnVideoEnd: Bool = false
 
     static let `default` = PlaylistConfig(
         folderPath: ("~/LiveWallpapers" as NSString).expandingTildeInPath,
@@ -14,16 +15,18 @@ struct PlaylistConfig: Codable, Equatable {
         currentIndex: 0,
         lastAdvanced: .distantPast,
         lockScreenEnabled: false,
-        startOffsetPercent: 0
+        startOffsetPercent: 0,
+        rotateOnVideoEnd: false
     )
 
-    init(folderPath: String, intervalSeconds: Double, currentIndex: Int, lastAdvanced: Date, lockScreenEnabled: Bool, startOffsetPercent: Double) {
+    init(folderPath: String, intervalSeconds: Double, currentIndex: Int, lastAdvanced: Date, lockScreenEnabled: Bool, startOffsetPercent: Double, rotateOnVideoEnd: Bool) {
         self.folderPath = folderPath
         self.intervalSeconds = intervalSeconds
         self.currentIndex = currentIndex
         self.lastAdvanced = lastAdvanced
         self.lockScreenEnabled = lockScreenEnabled
         self.startOffsetPercent = startOffsetPercent
+        self.rotateOnVideoEnd = rotateOnVideoEnd
     }
 
     init(from decoder: Decoder) throws {
@@ -34,6 +37,7 @@ struct PlaylistConfig: Codable, Equatable {
         lastAdvanced = try container.decode(Date.self, forKey: .lastAdvanced)
         lockScreenEnabled = try container.decodeIfPresent(Bool.self, forKey: .lockScreenEnabled) ?? false
         startOffsetPercent = try container.decodeIfPresent(Double.self, forKey: .startOffsetPercent) ?? 0
+        rotateOnVideoEnd = try container.decodeIfPresent(Bool.self, forKey: .rotateOnVideoEnd) ?? false
     }
 }
 
