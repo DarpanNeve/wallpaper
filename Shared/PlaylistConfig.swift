@@ -107,6 +107,7 @@ struct PlaylistConfig: Codable, Equatable {
     var renderPattern: VideoRenderPattern = .fill
     var orderPattern: PlaybackOrderPattern = .fromStart
     var perScreen: [String: ScreenConfig] = [:]
+    var breakReminder: BreakReminderConfig = .default
 
     static let `default` = PlaylistConfig(
         folderPath: ("~/LiveWallpapers" as NSString).expandingTildeInPath,
@@ -131,7 +132,8 @@ struct PlaylistConfig: Codable, Equatable {
         rotateOnVideoEnd: Bool,
         renderPattern: VideoRenderPattern = .fill,
         orderPattern: PlaybackOrderPattern = .fromStart,
-        perScreen: [String: ScreenConfig] = [:]
+        perScreen: [String: ScreenConfig] = [:],
+        breakReminder: BreakReminderConfig = .default
     ) {
         self.folderPath = folderPath
         self.intervalSeconds = intervalSeconds
@@ -143,6 +145,7 @@ struct PlaylistConfig: Codable, Equatable {
         self.renderPattern = renderPattern
         self.orderPattern = orderPattern
         self.perScreen = perScreen
+        self.breakReminder = breakReminder
     }
 
     init(from decoder: Decoder) throws {
@@ -157,6 +160,7 @@ struct PlaylistConfig: Codable, Equatable {
         renderPattern = try container.decodeIfPresent(VideoRenderPattern.self, forKey: .renderPattern) ?? .fill
         orderPattern = try container.decodeIfPresent(PlaybackOrderPattern.self, forKey: .orderPattern) ?? .fromStart
         perScreen = try container.decodeIfPresent([String: ScreenConfig].self, forKey: .perScreen) ?? [:]
+        breakReminder = try container.decodeIfPresent(BreakReminderConfig.self, forKey: .breakReminder) ?? .default
     }
 
     /// Resolves the config a given screen should actually play — its own override if customized,

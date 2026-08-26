@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         rotationController.start()
+        BreakReminderController.shared.start()
         menuBarController = MenuBarController(state: state)
         WindowOpener.shared.configure { [weak self] in self!.makeSettingsWindow() }
         WindowOpener.shared.onShow = { [weak self] in self?.state.startAutoRefresh() }

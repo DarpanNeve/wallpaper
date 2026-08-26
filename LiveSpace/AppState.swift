@@ -36,6 +36,12 @@ final class AppState: ObservableObject {
     @Published var videoFileNames: [String] = []
     @Published var currentVideoIndex: Int = 0
     @Published var displayRows: [DisplayRowState] = []
+    @Published var miniBreakEnabled: Bool
+    @Published var miniBreakDurationSeconds: Double
+    @Published var miniBreakIntervalMinutes: Double
+    @Published var longBreakEnabled: Bool
+    @Published var longBreakDurationSeconds: Double
+    @Published var longBreakIntervalMinutes: Double
 
     private var refreshTimer: Timer?
 
@@ -48,6 +54,12 @@ final class AppState: ObservableObject {
         rotateOnVideoEnd = config.rotateOnVideoEnd
         renderPattern = config.renderPattern
         orderPattern = config.orderPattern
+        miniBreakEnabled = config.breakReminder.miniBreakEnabled
+        miniBreakDurationSeconds = config.breakReminder.miniBreakDurationSeconds
+        miniBreakIntervalMinutes = config.breakReminder.miniBreakIntervalMinutes
+        longBreakEnabled = config.breakReminder.longBreakEnabled
+        longBreakDurationSeconds = config.breakReminder.longBreakDurationSeconds
+        longBreakIntervalMinutes = config.breakReminder.longBreakIntervalMinutes
         refreshVideoCount()
         refreshDisplays()
         refreshInstallStatus()
@@ -106,9 +118,21 @@ final class AppState: ObservableObject {
             config.rotateOnVideoEnd = self.rotateOnVideoEnd
             config.renderPattern = self.renderPattern
             config.orderPattern = self.orderPattern
+            config.breakReminder = BreakReminderConfig(
+                miniBreakEnabled: self.miniBreakEnabled,
+                miniBreakDurationSeconds: self.miniBreakDurationSeconds,
+                miniBreakIntervalMinutes: self.miniBreakIntervalMinutes,
+                longBreakEnabled: self.longBreakEnabled,
+                longBreakDurationSeconds: self.longBreakDurationSeconds,
+                longBreakIntervalMinutes: self.longBreakIntervalMinutes
+            )
         }
         refreshVideoCount()
         refreshDisplays()
+    }
+
+    func breakReminderChanged() {
+        persist()
     }
 
     func renderPatternChanged() {
