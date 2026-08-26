@@ -7,7 +7,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let rotationController: RotationController
     let state = AppState()
     private var menuBarController: MenuBarController?
-    private var settingsWindow: NSWindow?
     private var screenLockObserver: ScreenLockObserver?
 
     private static let hasRequestedLoginItemKey = "hasRequestedLoginItem"
@@ -20,7 +19,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         rotationController.start()
         menuBarController = MenuBarController(state: state)
-        showSettingsWindow()
+        WindowOpener.shared.configure { [weak self] in self!.makeSettingsWindow() }
+        WindowOpener.shared.onShow = { [weak self] in self?.state.startAutoRefresh() }
+        WindowOpener.shared.onClose = { [weak self] in self?.state.stopAutoRefresh() }
         screenLockObserver = ScreenLockObserver(
             onLock: { [weak self] in
                 self?.wallpaperEngine.pauseAll()
@@ -37,16 +38,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func showSettingsWindow() {
+    private func makeSettingsWindow() -> NSWindow {
         let hostingController = NSHostingController(rootView: ContentView().environmentObject(state))
         let window = NSWindow(contentViewController: hostingController)
         window.title = "LiveSpace"
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
         window.center()
-        window.makeKeyAndOrderFront(nil)
-        settingsWindow = window
-        WindowOpener.shared.mainWindow = window
-        NSApp.activate(ignoringOtherApps: true)
+        return window
     }
 }

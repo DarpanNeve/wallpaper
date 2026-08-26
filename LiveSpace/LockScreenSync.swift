@@ -10,6 +10,19 @@ enum LockScreenSync {
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("LiveSpace/lockscreen-state.json")
 
+    /// Serializes every filesystem swap and agent restart so a lock event can never race an
+    /// in-flight `install()` (which would hand the renderer a half-written video file).
+    private static let syncQueue = DispatchQueue(label: "com.livespace.lockscreensync", qos: .utility)
+    private static var lastRestartAt = Date.distantPast
+    /// macOS only re-decides "animate this aerial" vs "show a static poster" against a freshly
+    /// spawned WallpaperAgent/WallpaperAerialsExtension — a lock event that finds them already
+    /// running just gets whatever the last session already settled on. So every genuine lock
+    /// event still needs a restart; this guard only collapses duplicate OS notifications that
+    /// fire back-to-back for the same physical lock.
+    private static let duplicateNotificationWindow: TimeInterval = 1.5
+    private static let relaunchTimeout: TimeInterval = 3
+    private static let relaunchPollInterval: TimeInterval = 0.2
+
     static func sync(videoURL: URL) {
         DebugLog.write("LockScreenSync.sync called for \(videoURL.lastPathComponent)")
         HEVCTranscoder.hevcURL(for: videoURL) { hevcURL in
@@ -18,14 +31,14 @@ enum LockScreenSync {
                 return
             }
             DebugLog.write("LockScreenSync proceeding to install with \(hevcURL.lastPathComponent)")
-            DispatchQueue.global(qos: .utility).async {
+            syncQueue.async {
                 install(hevcSourceURL: hevcURL)
             }
         }
     }
 
     static func restore(completion: @escaping (Bool) -> Void) {
-        DispatchQueue.global(qos: .utility).async {
+        syncQueue.async {
             let ok = performRestore()
             DispatchQueue.main.async { completion(ok) }
         }
@@ -38,8 +51,15 @@ enum LockScreenSync {
     static func refreshOnLock() {
         let config = ConfigStore.shared.load()
         guard config.lockScreenEnabled else { return }
-        DebugLog.write("[LockScreenSync] refreshing on lock event")
-        restartWallpaperAgent()
+        syncQueue.async {
+            let sinceLast = Date().timeIntervalSince(lastRestartAt)
+            guard sinceLast >= duplicateNotificationWindow else {
+                DebugLog.write("[LockScreenSync] lock event, restarted \(sinceLast)s ago, treating as duplicate notification")
+                return
+            }
+            DebugLog.write("[LockScreenSync] refreshing on lock event")
+            performRestartAndVerify()
+        }
     }
 
     private static func findAerialSlot() -> URL? {
@@ -156,8 +176,28 @@ enum LockScreenSync {
         }
 
         try? FileManager.default.removeItem(at: stateFile)
-        restartWallpaperAgent()
+        performRestartAndVerify()
         return true
+    }
+
+    /// Kills the agent, then confirms it actually came back before giving up. A bare `killall`
+    /// with no verification was the other half of the instability: on an unlucky relaunch the
+    /// lock screen was left showing a dead renderer until the next successful cycle.
+    private static func performRestartAndVerify() {
+        restartWallpaperAgent()
+        lastRestartAt = Date()
+
+        let deadline = Date().addingTimeInterval(relaunchTimeout)
+        while !isWallpaperAgentRunning() && Date() < deadline {
+            Thread.sleep(forTimeInterval: relaunchPollInterval)
+        }
+
+        if isWallpaperAgentRunning() {
+            DebugLog.write("[LockScreenSync] WallpaperAgent relaunch confirmed")
+        } else {
+            DebugLog.write("[LockScreenSync] WallpaperAgent relaunch not confirmed within \(relaunchTimeout)s, retrying")
+            restartWallpaperAgent()
+        }
     }
 
     private static func restartWallpaperAgent() {
@@ -165,6 +205,22 @@ enum LockScreenSync {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         process.arguments = ["WallpaperAgent", "WallpaperAerialsExtension"]
         try? process.run()
+        process.waitUntilExit()
+    }
+
+    private static func isWallpaperAgentRunning() -> Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        process.arguments = ["-x", "WallpaperAgent"]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        do {
+            try process.run()
+        } catch {
+            return false
+        }
+        process.waitUntilExit()
+        return process.terminationStatus == 0
     }
 
     private static func saveState(aerialPath: String, backupPath: String) {

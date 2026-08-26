@@ -26,11 +26,20 @@ final class WallpaperWindow: NSWindow {
     let screenID: String
     var onEnded: (() -> Void)?
 
+    /// A 3-finger Space swipe briefly flips `occlusionState` off `.visible` for ~250-400ms even
+    /// though this window is `.stationary`/`canJoinAllSpaces` and never actually moves. Reacting
+    /// instantly caused an audible/visible stutter: `pause()` immediately followed by `play()`
+    /// forces `AVPlayerLayer` to re-schedule display, which hitches right at the swipe. Debouncing
+    /// past that window still catches real occlusion (fullscreen app, hidden Space — both last
+    /// well over a second) so the battery-saving pause stays intact.
+    private static let occlusionDebounce: TimeInterval = 0.5
+
     private let queuePlayer = AVQueuePlayer()
     private let playerLayer = AVPlayerLayer()
     private let dimLayer = CALayer()
     private var looper: AVPlayerLooper?
     private var endObserver: NSObjectProtocol?
+    private var pendingPause: DispatchWorkItem?
 
     init(screen: NSScreen) {
         screenID = screen.stableID
@@ -125,10 +134,16 @@ final class WallpaperWindow: NSWindow {
     }
 
     @objc private func occlusionStateChanged() {
+        pendingPause?.cancel()
         if occlusionState.contains(.visible) {
             queuePlayer.play()
         } else {
-            queuePlayer.pause()
+            let work = DispatchWorkItem { [weak self] in
+                guard let self, !self.occlusionState.contains(.visible) else { return }
+                self.queuePlayer.pause()
+            }
+            pendingPause = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.occlusionDebounce, execute: work)
         }
     }
 

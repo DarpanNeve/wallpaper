@@ -52,12 +52,26 @@ final class AppState: ObservableObject {
         refreshDisplays()
         refreshInstallStatus()
         refreshLockScreenStatus()
+    }
+
+    /// Only runs while the Settings window is actually visible — this polls the playlist folder
+    /// via `FileManager` every 3s, which is wasted disk/CPU churn when nobody's looking at it,
+    /// and was previously running unconditionally from app launch for the app's entire lifetime.
+    func startAutoRefresh() {
+        guard refreshTimer == nil else { return }
+        refreshVideoCount()
+        refreshDisplays()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshVideoCount()
                 self?.refreshDisplays()
             }
         }
+    }
+
+    func stopAutoRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 
     func chooseFolder() {
