@@ -79,17 +79,31 @@ final class RotationController {
             resolved[key] = (index, playlist, screenConfig)
         }
 
+        // "Changed" is decided once per GROUP, against state from *before* this tick, not
+        // recomputed screen-by-screen — mutating `loadedByGroup` inside the screen loop below
+        // used to make every mirrored screen after the first in a shared group see the state
+        // its predecessor had *just written moments earlier in the same tick*, always reading as
+        // unchanged, and silently never getting `setVideo` called at all on a normal (force:
+        // false) tick — including the very first tick at launch. A screen stuck like that shows
+        // its window's plain black background forever, since no video was ever loaded into it.
+        var groupChanged: [String: Bool] = [:]
+        for (key, resolvedValue) in resolved {
+            let loop = effectiveLoop(resolvedValue.screenConfig)
+            let loaded = loadedByGroup[key] ?? LoadedState()
+            let changed = loaded.index != resolvedValue.index || loaded.playlist != resolvedValue.playlist || loaded.loop != loop
+            groupChanged[key] = changed
+            if force || changed {
+                loadedByGroup[key] = LoadedState(index: resolvedValue.index, playlist: resolvedValue.playlist, loop: loop)
+            }
+        }
+
         for screen in screens {
             let screenID = screen.stableID
             let key = groupKey(screenID: screenID, config: config)
             guard let (index, playlist, screenConfig) = resolved[key] else { continue }
+            guard force || (groupChanged[key] ?? false) else { continue }
             let loop = effectiveLoop(screenConfig)
 
-            let loaded = loadedByGroup[key] ?? LoadedState()
-            let changed = loaded.index != index || loaded.playlist != playlist || loaded.loop != loop
-            guard force || changed else { continue }
-
-            loadedByGroup[key] = LoadedState(index: index, playlist: playlist, loop: loop)
             engine.setVideo(
                 screenID: screenID,
                 url: playlist[index],

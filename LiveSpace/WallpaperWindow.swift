@@ -37,6 +37,7 @@ final class WallpaperWindow: NSWindow {
     private let queuePlayer = AVQueuePlayer()
     private let playerLayer = AVPlayerLayer()
     private let dimLayer = CALayer()
+    private let hostView = WallpaperHostView()
     private var looper: AVPlayerLooper?
     private var endObserver: NSObjectProtocol?
     private var pendingPause: DispatchWorkItem?
@@ -52,9 +53,15 @@ final class WallpaperWindow: NSWindow {
         ignoresMouseEvents = true
         hasShadow = false
         isReleasedWhenClosed = false
-        collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]
+        // .stationary dropped (was in [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]):
+        // Apple docs say it makes the window "unaffected by Exposé" — observed as WindowServer
+        // excluding this window from live compositing during Mission Control's exploded per-space
+        // view, flickering to flat gray mid-session. Testing without it to see whether Mission
+        // Control renders the video continuously instead, at the cost of possibly reintroducing
+        // window-slide animation during Space switches (the reason it was added).
+        collectionBehavior = [.canJoinAllSpaces, .ignoresCycle, .fullScreenNone]
 
-        let hostView = WallpaperHostView(frame: screen.frame)
+        hostView.frame = NSRect(origin: .zero, size: screen.frame.size)
         hostView.wantsLayer = true
         playerLayer.frame = hostView.bounds
         playerLayer.videoGravity = .resizeAspectFill
@@ -78,6 +85,22 @@ final class WallpaperWindow: NSWindow {
             name: NSWindow.didChangeOcclusionStateNotification,
             object: self
         )
+    }
+
+    /// Repositions/resizes this window in place for a screen that changed frame but is still the
+    /// same physical display (`stableID` unchanged) — e.g. a resolution or arrangement change, or
+    /// the color-space/HDR renegotiation an external display does when a new GPU-accelerated
+    /// window lands on it. Keeps `queuePlayer` running through the change instead of the black
+    /// flash a full destroy-and-recreate caused (see `WallpaperEngine.rebuildWindows`).
+    func updateFrame(_ frame: NSRect) {
+        setFrame(frame, display: true)
+        let bounds = NSRect(origin: .zero, size: frame.size)
+        hostView.frame = bounds
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        playerLayer.frame = bounds
+        dimLayer.frame = bounds
+        CATransaction.commit()
     }
 
     func setVideo(url: URL, startOffsetPercent: Double = 0, loop: Bool = true, pattern: VideoRenderPattern = .fill) {
@@ -136,10 +159,13 @@ final class WallpaperWindow: NSWindow {
     @objc private func occlusionStateChanged() {
         pendingPause?.cancel()
         if occlusionState.contains(.visible) {
+            DebugLog.write("[WallpaperWindow \(screenID)] occlusion -> visible, play")
             queuePlayer.play()
         } else {
+            DebugLog.write("[WallpaperWindow \(screenID)] occlusion -> not visible, scheduling debounced pause")
             let work = DispatchWorkItem { [weak self] in
                 guard let self, !self.occlusionState.contains(.visible) else { return }
+                DebugLog.write("[WallpaperWindow \(self.screenID)] debounced pause firing")
                 self.queuePlayer.pause()
             }
             pendingPause = work
