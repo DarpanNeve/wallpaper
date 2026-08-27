@@ -22,14 +22,14 @@ private enum BreakTips {
         "Blink several times to re-wet your eyes.",
         "Roll your neck gently side to side.",
         "Shake out your hands and wrists.",
-        "Stretch your legs — stand and walk a few steps.",
+        "Stretch your legs, stand and walk a few steps.",
         "Sit up straight and drop your shoulders."
     ]
 
     static func random() -> String { all.randomElement() ?? "" }
 }
 
-/// Singleton (matches `ConfigStore`/`WindowOpener`/`RotationTrigger` — this app's convention for
+/// Singleton (matches `ConfigStore`/`WindowOpener`/`RotationTrigger` - this app's convention for
 /// shared modules) so the menu bar can drive it directly without threading a reference through
 /// `AppState`. Reads `BreakReminderConfig` fresh from `ConfigStore` every tick, same pattern as
 /// `RotationController.tick()`, so Settings changes apply live with no extra wiring.
@@ -79,6 +79,36 @@ final class BreakReminderController {
         return "Next break in \(Self.formatted(soonest))"
     }
 
+    /// Compact `mm:ss` form for the menu bar title itself (the full sentence in `statusText` is
+    /// too long to sit in the bar) - counts down to the next break, or the remaining break time
+    /// while one is showing.
+    var menuBarTimeText: String {
+        if activeKind != nil {
+            guard let breakEndTime else { return "--:--" }
+            return Self.compact(breakEndTime.timeIntervalSinceNow)
+        }
+        if let pausedUntil {
+            return "Paused for \(Self.formatted(pausedUntil.timeIntervalSinceNow))"
+        }
+        let config = ConfigStore.shared.load().breakReminder
+        var remainders: [TimeInterval] = []
+        if config.miniBreakEnabled {
+            remainders.append(config.miniBreakIntervalMinutes * 60 - miniElapsed)
+        }
+        if config.longBreakEnabled {
+            remainders.append(config.longBreakIntervalMinutes * 60 - longElapsed)
+        }
+        guard let soonest = remainders.min() else {
+            return "--:--"
+        }
+        return Self.compact(soonest)
+    }
+
+    private static func compact(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds))
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
     /// Dismisses any break currently showing, then pauses the schedule for `duration`.
     func pause(for duration: TimeInterval) {
         dismissBreak()
@@ -101,7 +131,14 @@ final class BreakReminderController {
             if remaining <= 0 {
                 dismissBreak()
             } else {
-                overlayModel.remainingSeconds = Int(remaining.rounded(.up))
+                // Clamped to step down by at most 1 per tick so a stalled main thread (e.g. the
+                // overlay windows' own `.regularMaterial` panels being built across every screen
+                // right as the break starts) can't make the wall-clock-derived value skip visibly -
+                // `breakEndTime` above still governs the actual dismiss moment, so this only
+                // smooths what's displayed, not when the break really ends.
+                let trueRemaining = Int(remaining.rounded(.up))
+                let previous = overlayModel.remainingSeconds
+                overlayModel.remainingSeconds = previous > trueRemaining ? previous - 1 : trueRemaining
             }
             return
         }

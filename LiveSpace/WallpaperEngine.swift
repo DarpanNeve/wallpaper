@@ -26,13 +26,13 @@ final class WallpaperEngine {
     }
 
     /// `didChangeScreenParametersNotification` can fire with the exact same set of physical
-    /// displays — an external display renegotiating color space/HDR/refresh rate (observed with a
+    /// displays - an external display renegotiating color space/HDR/refresh rate (observed with a
     /// new Chrome window landing on it) reposts it with a nudged frame, not a real add/remove.
     /// Destroying and recreating the window blanked that screen to black for a beat even though
     /// nothing about the display actually changed identity. A same-`stableID` frame change is now
     /// resized in place (`updateFrame`, no teardown, `queuePlayer` keeps running) instead. Only an
     /// actual add/remove of a physical display (the `stableID` set itself changing) tears a window
-    /// down or creates one — and only that case returns `true`, so `onScreensChanged` (which forces
+    /// down or creates one - and only that case returns `true`, so `onScreensChanged` (which forces
     /// every window to reload its video, its own decode-restart cost) doesn't fire for a resize.
     @discardableResult
     private func rebuildWindows() -> Bool {

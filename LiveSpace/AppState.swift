@@ -5,11 +5,11 @@ import Combine
 struct DisplayRowState: Identifiable, Equatable {
     let id: String
     let name: String
-    /// True only when this display's folder/timing are actually customized — distinct from
+    /// True only when this display's folder/timing are actually customized - distinct from
     /// `hasOverride`, since a display can customize just its look/order and still play the
     /// default folder live.
     var isCustomFolder: Bool
-    /// True if this display has ANY override at all (folder and/or look/order) — drives whether
+    /// True if this display has ANY override at all (folder and/or look/order) - drives whether
     /// "Reset to Default" is shown.
     var hasOverride: Bool
     var folderPath: String
@@ -66,7 +66,7 @@ final class AppState: ObservableObject {
         refreshLockScreenStatus()
     }
 
-    /// Only runs while the Settings window is actually visible — this polls the playlist folder
+    /// Only runs while the Settings window is actually visible - this polls the playlist folder
     /// via `FileManager` every 3s, which is wasted disk/CPU churn when nobody's looking at it,
     /// and was previously running unconditionally from app launch for the app's entire lifetime.
     func startAutoRefresh() {
@@ -173,7 +173,7 @@ final class AppState: ObservableObject {
 
     func refreshLockScreenStatus() {
         if !LockScreenSync.hasDownloadedAerial() {
-            lockScreenStatus = "No Apple Aerial wallpaper found — pick one in Screen Saver settings first"
+            lockScreenStatus = "No Apple Aerial wallpaper found. Pick one in Screen Saver settings first"
         } else if lockScreenEnabled {
             lockScreenStatus = "Syncing with playlist"
         } else {
@@ -219,7 +219,7 @@ final class AppState: ObservableObject {
     }
 
     /// Creates a screen's override from its current effective values if it doesn't have one yet.
-    /// `customizesFolder` only takes effect when it's `true` — it force-enables folder/timing
+    /// `customizesFolder` only takes effect when it's `true` - it force-enables folder/timing
     /// customization on the entry (creating or updating), but a look/order-only change
     /// (`customizesFolder: false`) never turns off folder customization an entry already has.
     private func materializeOverride(id: String, customizesFolder: Bool, config: inout PlaylistConfig) {

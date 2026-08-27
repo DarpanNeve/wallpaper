@@ -19,10 +19,10 @@ private struct BreakOverlayView: View {
                 .font(.system(size: 120, weight: .thin, design: .rounded))
                 .monospacedDigit()
             Text(model.tip)
-                .font(.title3)
+                .font(.system(size: 26, weight: .medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 480)
+                .frame(maxWidth: 640)
             Button("Skip", action: model.onSkip)
                 .buttonStyle(.bordered)
                 .controlSize(.large)
@@ -33,7 +33,7 @@ private struct BreakOverlayView: View {
     }
 
     /// Matches the standard macOS window corner radius (the same continuous "squircle" curve
-    /// every titled `NSWindow` gets automatically) — this panel is borderless, so it has to be
+    /// every titled `NSWindow` gets automatically) - this panel is borderless, so it has to be
     /// replicated by hand rather than inherited for free.
     private static let cornerRadius: CGFloat = 12
 
@@ -45,16 +45,16 @@ private struct BreakOverlayView: View {
 }
 
 /// Deliberately near-fullscreen (80% of each screen, not the literal full-screen takeover
-/// declined earlier) — a small floating card didn't create enough real pressure to actually stop
+/// declined earlier) - a small floating card didn't create enough real pressure to actually stop
 /// working, per user feedback after seeing it live. Still `.nonactivatingPanel`, so it never
 /// steals focus/activates the app over whatever the user was in, matching "window mode" rather
 /// than becoming a true fullscreen window (which would also fight Spaces/Mission Control).
-/// `.regularMaterial` tracks light/dark automatically — no manual appearance tracking needed here.
+/// `.regularMaterial` tracks light/dark automatically - no manual appearance tracking needed here.
 final class BreakOverlayWindow: NSPanel {
     private static let screenFraction: CGFloat = 0.8
 
     init(screen: NSScreen, model: BreakOverlayModel) {
-        // `visibleFrame`, not `frame` — centers on the usable desktop area, excluding the menu
+        // `visibleFrame`, not `frame` - centers on the usable desktop area, excluding the menu
         // bar/Dock strips `frame` includes, which otherwise skews the panel off-center relative
         // to what's actually visible.
         let visible = screen.visibleFrame

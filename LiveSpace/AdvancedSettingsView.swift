@@ -27,7 +27,7 @@ struct AdvancedSettingsView: View {
                     Text(state.lockScreenStatus)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    SettingsCaption("Experimental — uses an undocumented macOS mechanism (replaces a downloaded Apple Aerial wallpaper's video file). Could break on a future macOS update. Requires selecting an Apple Aerial as your Screen Saver first, with \"Show screen saver on lock screen\" enabled in System Settings.")
+                    SettingsCaption("Experimental: uses an undocumented macOS mechanism (replaces a downloaded Apple Aerial wallpaper's video file). Could break on a future macOS update. Requires selecting an Apple Aerial as your Screen Saver first, with \"Show screen saver on lock screen\" enabled in System Settings.")
                     Button("Restore Original Lock Screen") { state.restoreOriginalLockScreen() }
                         .font(.caption)
                 }
@@ -56,7 +56,7 @@ struct AdvancedSettingsView: View {
         }
     }
 
-    /// `asMinutesPast` renders values above that threshold as minutes instead of the raw suffix —
+    /// `asMinutesPast` renders values above that threshold as minutes instead of the raw suffix -
     /// used for the long-break duration slider, whose range runs well past a minute.
     private func breakSliderRow(
         _ label: String,

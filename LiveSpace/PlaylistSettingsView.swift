@@ -8,7 +8,7 @@ struct PlaylistSettingsView: View {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsSection("Now Playing", systemImage: "play.circle") {
                     if state.videoFileNames.isEmpty {
-                        SettingsCaption("No videos found yet — add some to your video folder below.")
+                        SettingsCaption("No videos found yet. Add some to your video folder below.")
                     } else {
                         HStack(spacing: 12) {
                             Picker("", selection: $state.currentVideoIndex) {

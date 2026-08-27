@@ -15,7 +15,7 @@ enum LockScreenSync {
     private static let syncQueue = DispatchQueue(label: "com.livespace.lockscreensync", qos: .utility)
     private static var lastRestartAt = Date.distantPast
     /// macOS only re-decides "animate this aerial" vs "show a static poster" against a freshly
-    /// spawned WallpaperAgent/WallpaperAerialsExtension — a lock event that finds them already
+    /// spawned WallpaperAgent/WallpaperAerialsExtension - a lock event that finds them already
     /// running just gets whatever the last session already settled on. So every genuine lock
     /// event still needs a restart; this guard only collapses duplicate OS notifications that
     /// fire back-to-back for the same physical lock.
@@ -74,7 +74,7 @@ enum LockScreenSync {
     private static func install(hevcSourceURL: URL) {
         DebugLog.write("install() starting for \(hevcSourceURL.lastPathComponent)")
         guard let aerialSlot = findAerialSlot() else {
-            DebugLog.write("no downloaded Aerial found — pick one in System Settings > Screen Saver first")
+            DebugLog.write("no downloaded Aerial found, pick one in System Settings > Screen Saver first")
             return
         }
         DebugLog.write("found aerial slot \(aerialSlot.lastPathComponent)")

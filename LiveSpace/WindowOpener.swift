@@ -11,7 +11,7 @@ final class WindowOpener {
     private var closeObserver: NSObjectProtocol?
     private init() {}
 
-    /// Set once at launch. The window itself is built lazily on first `show()`, not at launch —
+    /// Set once at launch. The window itself is built lazily on first `show()`, not at launch -
     /// that's what keeps a login-item boot from popping the Settings window on screen.
     func configure(factory: @escaping () -> NSWindow) {
         windowFactory = factory

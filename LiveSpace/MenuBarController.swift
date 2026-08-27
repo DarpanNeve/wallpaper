@@ -6,21 +6,28 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private let launchAtLoginItem: NSMenuItem
     private let breakStatusItem: NSMenuItem
     private let state: AppState
+    private var displayTimer: Timer?
 
     init(state: AppState) {
         self.state = state
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         launchAtLoginItem = NSMenuItem(
             title: "Launch at Login",
             action: #selector(MenuBarController.toggleLaunchAtLogin),
             keyEquivalent: ""
         )
-        breakStatusItem = NSMenuItem(title: "Next break in —", action: nil, keyEquivalent: "")
+        breakStatusItem = NSMenuItem(title: "Next break in ...", action: nil, keyEquivalent: "")
         super.init()
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "sparkles.tv", accessibilityDescription: "LiveSpace")
+            button.font = .monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+            button.title = BreakReminderController.shared.menuBarTimeText
         }
+        let t = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            self?.statusItem.button?.title = BreakReminderController.shared.menuBarTimeText
+        }
+        RunLoop.main.add(t, forMode: .common)
+        displayTimer = t
 
         let menu = NSMenu()
         menu.delegate = self

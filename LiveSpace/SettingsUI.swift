@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Card-style settings section used across all Settings tabs — a labeled group with an icon,
+/// Card-style settings section used across all Settings tabs - a labeled group with an icon,
 /// matching the native macOS System Settings look.
 struct SettingsSection<Content: View>: View {
     let title: String
@@ -27,7 +27,7 @@ struct SettingsSection<Content: View>: View {
     }
 }
 
-/// Secondary explanatory text under a control — wraps instead of truncating.
+/// Secondary explanatory text under a control - wraps instead of truncating.
 struct SettingsCaption: View {
     let text: String
 
@@ -44,7 +44,7 @@ struct SettingsCaption: View {
     }
 }
 
-/// A labeled segmented picker row — `Label:  [Option A | Option B | ...]`.
+/// A labeled segmented picker row - `Label:  [Option A | Option B | ...]`.
 /// Segmented `Picker(_:selection:)` doesn't reliably show its label on macOS outside a Form,
 /// so every picker row in Settings uses this instead of the labeled initializer.
 struct LabeledSegmentedPicker<Value: Hashable, Content: View>: View {

@@ -80,11 +80,11 @@ final class RotationController {
         }
 
         // "Changed" is decided once per GROUP, against state from *before* this tick, not
-        // recomputed screen-by-screen — mutating `loadedByGroup` inside the screen loop below
+        // recomputed screen-by-screen - mutating `loadedByGroup` inside the screen loop below
         // used to make every mirrored screen after the first in a shared group see the state
         // its predecessor had *just written moments earlier in the same tick*, always reading as
         // unchanged, and silently never getting `setVideo` called at all on a normal (force:
-        // false) tick — including the very first tick at launch. A screen stuck like that shows
+        // false) tick - including the very first tick at launch. A screen stuck like that shows
         // its window's plain black background forever, since no video was ever loaded into it.
         var groupChanged: [String: Bool] = [:]
         for (key, resolvedValue) in resolved {
@@ -159,7 +159,7 @@ final class RotationController {
         }
     }
 
-    /// Poster (menu bar/Dock tint) and lock-screen sync only make sense for one video —
+    /// Poster (menu bar/Dock tint) and lock-screen sync only make sense for one video -
     /// tie both to whichever group currently drives the main screen.
     private func syncIfPrimary(key: String, config: PlaylistConfig, videoURL: URL) {
         guard let mainID = NSScreen.main?.stableID, groupKey(screenID: mainID, config: config) == key else { return }

@@ -38,7 +38,7 @@ enum PlaybackOrderPattern: String, Codable, CaseIterable, Identifiable {
         case .fromStart: return "Plays the playlist in order, looping back to the first video after the last."
         case .fromEnd: return "Plays the playlist backwards, from the last video to the first."
         case .random: return "Picks a random video each time it switches."
-        case .static: return "Stays on the selected video — never switches automatically."
+        case .static: return "Stays on the selected video and never switches automatically."
         }
     }
 }
@@ -54,7 +54,7 @@ struct ScreenConfig: Codable, Equatable {
     var orderPattern: PlaybackOrderPattern
     /// Whether this screen's `folderPath`/`intervalSeconds`/`rotateOnVideoEnd`/`startOffsetPercent`
     /// are actually customized. When `false`, those four fields are stale snapshots and
-    /// `PlaylistConfig.effectiveScreenConfig(for:)` overrides them with the live default —
+    /// `PlaylistConfig.effectiveScreenConfig(for:)` overrides them with the live default -
     /// only `renderPattern`/`orderPattern` (and this screen's own rotation index) are real here.
     /// Lets a display customize just its look/order without silently freezing its playlist folder.
     var customizesFolder: Bool
@@ -91,7 +91,7 @@ struct ScreenConfig: Codable, Equatable {
         startOffsetPercent = try container.decodeIfPresent(Double.self, forKey: .startOffsetPercent) ?? 0
         renderPattern = try container.decodeIfPresent(VideoRenderPattern.self, forKey: .renderPattern) ?? .fill
         orderPattern = try container.decodeIfPresent(PlaybackOrderPattern.self, forKey: .orderPattern) ?? .fromStart
-        // Overrides persisted before this field existed were always fully custom — preserve that.
+        // Overrides persisted before this field existed were always fully custom - preserve that.
         customizesFolder = try container.decodeIfPresent(Bool.self, forKey: .customizesFolder) ?? true
     }
 }
@@ -163,7 +163,7 @@ struct PlaylistConfig: Codable, Equatable {
         breakReminder = try container.decodeIfPresent(BreakReminderConfig.self, forKey: .breakReminder) ?? .default
     }
 
-    /// Resolves the config a given screen should actually play — its own override if customized,
+    /// Resolves the config a given screen should actually play - its own override if customized,
     /// otherwise the default (mirrored) fields above. A screen that only customized its look/order
     /// (`customizesFolder == false`) still tracks its own rotation index, but its folder/timing
     /// fields are pulled live from the default here rather than a frozen snapshot.

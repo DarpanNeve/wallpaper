@@ -30,7 +30,7 @@ final class WallpaperWindow: NSWindow {
     /// though this window is `.stationary`/`canJoinAllSpaces` and never actually moves. Reacting
     /// instantly caused an audible/visible stutter: `pause()` immediately followed by `play()`
     /// forces `AVPlayerLayer` to re-schedule display, which hitches right at the swipe. Debouncing
-    /// past that window still catches real occlusion (fullscreen app, hidden Space — both last
+    /// past that window still catches real occlusion (fullscreen app, hidden Space - both last
     /// well over a second) so the battery-saving pause stays intact.
     private static let occlusionDebounce: TimeInterval = 0.5
 
@@ -54,7 +54,7 @@ final class WallpaperWindow: NSWindow {
         hasShadow = false
         isReleasedWhenClosed = false
         // .stationary dropped (was in [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]):
-        // Apple docs say it makes the window "unaffected by Exposé" — observed as WindowServer
+        // Apple docs say it makes the window "unaffected by Exposé" - observed as WindowServer
         // excluding this window from live compositing during Mission Control's exploded per-space
         // view, flickering to flat gray mid-session. Testing without it to see whether Mission
         // Control renders the video continuously instead, at the cost of possibly reintroducing
@@ -88,7 +88,7 @@ final class WallpaperWindow: NSWindow {
     }
 
     /// Repositions/resizes this window in place for a screen that changed frame but is still the
-    /// same physical display (`stableID` unchanged) — e.g. a resolution or arrangement change, or
+    /// same physical display (`stableID` unchanged) - e.g. a resolution or arrangement change, or
     /// the color-space/HDR renegotiation an external display does when a new GPU-accelerated
     /// window lands on it. Keeps `queuePlayer` running through the change instead of the black
     /// flash a full destroy-and-recreate caused (see `WallpaperEngine.rebuildWindows`).
