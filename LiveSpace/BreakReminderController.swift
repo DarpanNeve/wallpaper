@@ -127,18 +127,18 @@ final class BreakReminderController {
     private func tick() {
         if activeKind != nil {
             guard let breakEndTime else { return }
-            let remaining = breakEndTime.timeIntervalSinceNow
-            if remaining <= 0 {
+            if breakEndTime.timeIntervalSinceNow <= 0 {
                 dismissBreak()
             } else {
-                // Clamped to step down by at most 1 per tick so a stalled main thread (e.g. the
-                // overlay windows' own `.regularMaterial` panels being built across every screen
-                // right as the break starts) can't make the wall-clock-derived value skip visibly -
-                // `breakEndTime` above still governs the actual dismiss moment, so this only
-                // smooths what's displayed, not when the break really ends.
-                let trueRemaining = Int(remaining.rounded(.up))
-                let previous = overlayModel.remainingSeconds
-                overlayModel.remainingSeconds = previous > trueRemaining ? previous - 1 : trueRemaining
+                // Deliberately NOT re-measuring `breakEndTime.timeIntervalSinceNow` into the
+                // displayed number each tick - a wall-clock float sampled once a second is right on
+                // top of ceil()'s own integer boundary, so a few ms of ordinary Timer jitter either
+                // way flips the rounded result and the display stutters (holds a value for 2 ticks)
+                // or skips one. Counting fires down by exactly 1 is immune to that: it can only ever
+                // move by one, every tick, full stop. `breakEndTime` above still solely decides when
+                // the break actually ends, so a rare stalled tick just makes the overlay disappear a
+                // beat after the display reads "0" rather than skewing what's shown mid-countdown.
+                overlayModel.remainingSeconds = max(0, overlayModel.remainingSeconds - 1)
             }
             return
         }

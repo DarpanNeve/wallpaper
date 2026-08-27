@@ -57,6 +57,10 @@ private struct BreakOverlayView: View {
                 Text(timeString)
                     .font(.system(size: 68, weight: .thin, design: .rounded))
                     .monospacedDigit()
+                    // `TimelineView(.animation)` puts an implicit animation on everything it
+                    // redraws each frame, including this - without opting out, the once-a-second
+                    // digit jump gets tweened/morphed instead of snapping, reading as a glitch.
+                    .animation(nil, value: model.remainingSeconds)
             }
             .frame(width: Self.ringDiameter, height: Self.ringDiameter)
         }
