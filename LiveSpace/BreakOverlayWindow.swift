@@ -5,6 +5,8 @@ final class BreakOverlayModel: ObservableObject {
     @Published var kind: BreakKind = .mini
     @Published var remainingSeconds: Int = 0
     @Published var tip: String = ""
+    var startTime: Date = Date()
+    var duration: TimeInterval = 0
     var onSkip: () -> Void = {}
 }
 
@@ -15,9 +17,7 @@ private struct BreakOverlayView: View {
         VStack(spacing: 28) {
             Text(model.kind.title)
                 .font(.system(size: 34, weight: .semibold))
-            Text(timeString)
-                .font(.system(size: 120, weight: .thin, design: .rounded))
-                .monospacedDigit()
+            ringAndTime
             Text(model.tip)
                 .font(.system(size: 26, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -36,6 +36,31 @@ private struct BreakOverlayView: View {
     /// every titled `NSWindow` gets automatically) - this panel is borderless, so it has to be
     /// replicated by hand rather than inherited for free.
     private static let cornerRadius: CGFloat = 12
+    private static let ringDiameter: CGFloat = 260
+
+    /// The number only updates once a second (it must - that's what's actually true), which on
+    /// its own reads as stalled/frozen for that whole second. `TimelineView(.animation)` repaints
+    /// the ring every frame straight off `startTime`/`duration`, independent of `remainingSeconds`,
+    /// so there's always visible motion between ticks even though the digits still jump once a
+    /// second.
+    private var ringAndTime: some View {
+        TimelineView(.animation) { context in
+            let elapsed = context.date.timeIntervalSince(model.startTime)
+            let progress = model.duration > 0 ? min(max(elapsed / model.duration, 0), 1) : 0
+            ZStack {
+                Circle()
+                    .stroke(.secondary.opacity(0.2), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: 1 - progress)
+                    .stroke(.primary, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text(timeString)
+                    .font(.system(size: 68, weight: .thin, design: .rounded))
+                    .monospacedDigit()
+            }
+            .frame(width: Self.ringDiameter, height: Self.ringDiameter)
+        }
+    }
 
     private var timeString: String {
         let minutes = model.remainingSeconds / 60

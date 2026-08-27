@@ -163,10 +163,13 @@ final class BreakReminderController {
     }
 
     private func trigger(_ kind: BreakKind, duration: TimeInterval) {
+        let now = Date()
         activeKind = kind
-        breakEndTime = Date().addingTimeInterval(duration)
+        breakEndTime = now.addingTimeInterval(duration)
         overlayModel.kind = kind
         overlayModel.remainingSeconds = Int(duration.rounded(.up))
+        overlayModel.startTime = now
+        overlayModel.duration = duration
         overlayModel.tip = BreakTips.random()
         overlayWindows = NSScreen.screens.map { BreakOverlayWindow(screen: $0, model: overlayModel) }
         DebugLog.write("breakReminder: triggered \(kind) duration=\(duration)s screens=\(overlayWindows.count)")
