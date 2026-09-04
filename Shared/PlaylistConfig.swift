@@ -102,6 +102,7 @@ struct PlaylistConfig: Codable, Equatable {
     var currentIndex: Int
     var lastAdvanced: Date
     var lockScreenEnabled: Bool = false
+    var posterSyncEnabled: Bool = true
     var startOffsetPercent: Double = 0
     var rotateOnVideoEnd: Bool = false
     var renderPattern: VideoRenderPattern = .fill
@@ -115,6 +116,7 @@ struct PlaylistConfig: Codable, Equatable {
         currentIndex: 0,
         lastAdvanced: .distantPast,
         lockScreenEnabled: false,
+        posterSyncEnabled: true,
         startOffsetPercent: 0,
         rotateOnVideoEnd: false,
         renderPattern: .fill,
@@ -128,6 +130,7 @@ struct PlaylistConfig: Codable, Equatable {
         currentIndex: Int,
         lastAdvanced: Date,
         lockScreenEnabled: Bool,
+        posterSyncEnabled: Bool = true,
         startOffsetPercent: Double,
         rotateOnVideoEnd: Bool,
         renderPattern: VideoRenderPattern = .fill,
@@ -140,6 +143,7 @@ struct PlaylistConfig: Codable, Equatable {
         self.currentIndex = currentIndex
         self.lastAdvanced = lastAdvanced
         self.lockScreenEnabled = lockScreenEnabled
+        self.posterSyncEnabled = posterSyncEnabled
         self.startOffsetPercent = startOffsetPercent
         self.rotateOnVideoEnd = rotateOnVideoEnd
         self.renderPattern = renderPattern
@@ -155,6 +159,7 @@ struct PlaylistConfig: Codable, Equatable {
         currentIndex = try container.decode(Int.self, forKey: .currentIndex)
         lastAdvanced = try container.decode(Date.self, forKey: .lastAdvanced)
         lockScreenEnabled = try container.decodeIfPresent(Bool.self, forKey: .lockScreenEnabled) ?? false
+        posterSyncEnabled = try container.decodeIfPresent(Bool.self, forKey: .posterSyncEnabled) ?? true
         startOffsetPercent = try container.decodeIfPresent(Double.self, forKey: .startOffsetPercent) ?? 0
         rotateOnVideoEnd = try container.decodeIfPresent(Bool.self, forKey: .rotateOnVideoEnd) ?? false
         renderPattern = try container.decodeIfPresent(VideoRenderPattern.self, forKey: .renderPattern) ?? .fill

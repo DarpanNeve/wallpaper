@@ -19,6 +19,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         rotationController.start()
         BreakReminderController.shared.start()
+
+        if !UserDefaults.standard.bool(forKey: Self.hasRequestedLoginItemKey) {
+            UserDefaults.standard.set(true, forKey: Self.hasRequestedLoginItemKey)
+            requestLoginItemConsent()
+        }
+
         menuBarController = MenuBarController(state: state)
         WindowOpener.shared.configure { [weak self] in self!.makeSettingsWindow() }
         WindowOpener.shared.onShow = { [weak self] in self?.state.startAutoRefresh() }
@@ -32,11 +38,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.wallpaperEngine.resumeAll()
             }
         )
+    }
 
-        if !UserDefaults.standard.bool(forKey: Self.hasRequestedLoginItemKey) {
-            UserDefaults.standard.set(true, forKey: Self.hasRequestedLoginItemKey)
-            LaunchAtLogin.setEnabled(true)
-        }
+    private func requestLoginItemConsent() {
+        let alert = NSAlert()
+        alert.messageText = "Launch LiveSpace at Login?"
+        alert.informativeText = "LiveSpace runs from the menu bar. Starting it automatically when you log in keeps your wallpaper rotating without needing to open it manually. You can change this anytime from the menu bar menu."
+        alert.addButton(withTitle: "Launch at Login")
+        alert.addButton(withTitle: "Not Now")
+        alert.alertStyle = .informational
+        let response = alert.runModal()
+        LaunchAtLogin.setEnabled(response == .alertFirstButtonReturn)
     }
 
     private func makeSettingsWindow() -> NSWindow {

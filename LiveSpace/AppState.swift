@@ -29,6 +29,8 @@ final class AppState: ObservableObject {
     @Published var installStatus: String = "Not installed"
     @Published var lockScreenEnabled: Bool
     @Published var lockScreenStatus: String = ""
+    @Published var posterSyncEnabled: Bool
+    @Published var posterSyncStatus: String = ""
     @Published var startOffsetPercent: Double
     @Published var rotateOnVideoEnd: Bool
     @Published var renderPattern: VideoRenderPattern
@@ -50,6 +52,7 @@ final class AppState: ObservableObject {
         folderPath = config.folderPath
         intervalMinutes = config.intervalSeconds / 60
         lockScreenEnabled = config.lockScreenEnabled
+        posterSyncEnabled = config.posterSyncEnabled
         startOffsetPercent = config.startOffsetPercent
         rotateOnVideoEnd = config.rotateOnVideoEnd
         renderPattern = config.renderPattern
@@ -64,6 +67,7 @@ final class AppState: ObservableObject {
         refreshDisplays()
         refreshInstallStatus()
         refreshLockScreenStatus()
+        refreshPosterSyncStatus()
     }
 
     /// Only runs while the Settings window is actually visible - this polls the playlist folder
@@ -114,6 +118,7 @@ final class AppState: ObservableObject {
             config.folderPath = self.folderPath
             config.intervalSeconds = self.intervalMinutes * 60
             config.lockScreenEnabled = self.lockScreenEnabled
+            config.posterSyncEnabled = self.posterSyncEnabled
             config.startOffsetPercent = self.startOffsetPercent
             config.rotateOnVideoEnd = self.rotateOnVideoEnd
             config.renderPattern = self.renderPattern
@@ -185,6 +190,22 @@ final class AppState: ObservableObject {
         LockScreenSync.restore { [weak self] success in
             self?.lockScreenStatus = success ? "Restored original Aerial" : "Nothing to restore"
         }
+    }
+
+    func posterSyncToggled() {
+        persist()
+        refreshPosterSyncStatus()
+    }
+
+    func refreshPosterSyncStatus() {
+        posterSyncStatus = posterSyncEnabled
+            ? "Syncing with playlist"
+            : "Off"
+    }
+
+    func restoreOriginalWallpaper() {
+        let restored = PosterFrameSync.restore()
+        posterSyncStatus = restored ? "Restored original wallpaper" : "Nothing to restore"
     }
 
     func refreshVideoCount() {

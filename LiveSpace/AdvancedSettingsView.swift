@@ -6,6 +6,11 @@ struct AdvancedSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                SettingsSection("Startup", systemImage: "power") {
+                    Toggle("Launch LiveSpace at Login", isOn: launchAtLoginBinding)
+                    SettingsCaption("Automatically starts LiveSpace when you log in to your Mac.")
+                }
+
                 SettingsSection("Screen Saver Plugin", systemImage: "play.rectangle.on.rectangle") {
                     HStack {
                         Circle()
@@ -19,6 +24,17 @@ struct AdvancedSettingsView: View {
                     }
                     SettingsCaption("After installing: System Settings → Screen Saver → select LiveSpace → enable \"Show as wallpaper\". Then System Settings → Lock Screen → enable \"Show screen saver\" for lock screen live wallpaper.")
                     Button("Open System Settings") { state.openSystemSettings() }
+                }
+
+                SettingsSection("Desktop Wallpaper Sync", systemImage: "photo.on.rectangle") {
+                    Toggle("Match system wallpaper to playlist", isOn: $state.posterSyncEnabled)
+                        .onChange(of: state.posterSyncEnabled) { _, _ in state.posterSyncToggled() }
+                    Text(state.posterSyncStatus)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    SettingsCaption("Updates System Settings → Wallpaper with a still frame from the current video, so the menu bar and Dock tint match what's playing. Your original wallpaper is backed up the first time this runs.")
+                    Button("Restore Original Wallpaper") { state.restoreOriginalWallpaper() }
+                        .font(.caption)
                 }
 
                 SettingsSection("Lock Screen", systemImage: "lock.display") {
@@ -54,6 +70,13 @@ struct AdvancedSettingsView: View {
             }
             .padding(24)
         }
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { LaunchAtLogin.isEnabled },
+            set: { LaunchAtLogin.setEnabled($0) }
+        )
     }
 
     /// `asMinutesPast` renders values above that threshold as minutes instead of the raw suffix -

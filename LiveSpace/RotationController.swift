@@ -163,7 +163,9 @@ final class RotationController {
     /// tie both to whichever group currently drives the main screen.
     private func syncIfPrimary(key: String, config: PlaylistConfig, videoURL: URL) {
         guard let mainID = NSScreen.main?.stableID, groupKey(screenID: mainID, config: config) == key else { return }
-        PosterFrameSync.sync(videoURL: videoURL)
+        if config.posterSyncEnabled {
+            PosterFrameSync.sync(videoURL: videoURL)
+        }
         if config.lockScreenEnabled {
             LockScreenSync.sync(videoURL: videoURL)
         }

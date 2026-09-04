@@ -53,6 +53,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
     func menuWillOpen(_ menu: NSMenu) {
         breakStatusItem.title = BreakReminderController.shared.statusText
+        launchAtLoginItem.state = LaunchAtLogin.isEnabled ? .on : .off
     }
 
     private func pauseBreaksMenu() -> NSMenu {
