@@ -12,11 +12,16 @@ configFiles:
 
 settings:
   base:
-    MARKETING_VERSION: "1.0.0"
+    MARKETING_VERSION: "1.1.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.0"
-    CODE_SIGN_STYLE: Automatic
-    CODE_SIGN_IDENTITY: "Apple Development"
+  configs:
+    Debug:
+      CODE_SIGN_STYLE: Automatic
+      CODE_SIGN_IDENTITY: "Apple Development"
+    Release:
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGN_IDENTITY: "Developer ID Application"
 
 targets:
   LiveSpace:
@@ -46,7 +51,7 @@ targets:
           DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/LiveSpace.saver"
           mkdir -p "$(dirname "$DEST")"
           rm -rf "$DEST"
-          cp -R "$SAVER_BUILT" "$DEST"
+          cp -RL "$SAVER_BUILT" "$DEST"
         basedOnDependencyAnalysis: false
 
   LiveSpaceSaver:
