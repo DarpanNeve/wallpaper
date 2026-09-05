@@ -1,4 +1,4 @@
-name: LiveSpace
+name: KineticDesk
 options:
   bundleIdPrefix: com.syntexco
   deploymentTarget:
@@ -24,7 +24,7 @@ settings:
       CODE_SIGN_IDENTITY: "Developer ID Application"
 
 targets:
-  LiveSpace:
+  KineticDesk:
     type: application
     platform: macOS
     sources:
@@ -32,8 +32,8 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.syntexco.livespace
-        PRODUCT_NAME: LiveSpace
+        PRODUCT_BUNDLE_IDENTIFIER: com.syntexco.kineticdesk
+        PRODUCT_NAME: KineticDesk
         INFOPLIST_FILE: LiveSpace/Info.plist
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
@@ -42,9 +42,9 @@ targets:
           - "@executable_path/../Frameworks"
 
 schemes:
-  LiveSpace:
+  KineticDesk:
     build:
       targets:
-        LiveSpace: all
+        KineticDesk: all
     run:
       config: Debug

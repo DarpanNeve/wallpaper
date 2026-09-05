@@ -19,7 +19,7 @@ enum ThumbnailCache {
     private static var pendingWork: [() -> Void] = []
     /// Serializes access to `activeCount`/`pendingWork`, which are otherwise touched from both
     /// the calling thread (usually main) and AVFoundation's background completion callbacks.
-    private static let queueLock = DispatchQueue(label: "com.syntexco.livespace.thumbnailcache")
+    private static let queueLock = DispatchQueue(label: "com.syntexco.kineticdesk.thumbnailcache")
 
     private static func cacheKey(for sourceURL: URL) -> String {
         let attrs = try? FileManager.default.attributesOfItem(atPath: sourceURL.path)

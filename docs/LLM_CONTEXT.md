@@ -1,6 +1,8 @@
-# LiveSpace — LLM Context
+# KineticDesk — LLM Context
 
 macOS live wallpaper app. Plays a rotating playlist of local videos as the desktop background, with best-effort lock-screen sync. Ships as a signed `.dmg`.
+
+**Renamed from LiveSpace to KineticDesk as of v1.2.0** — product name, `PRODUCT_NAME`, and bundle ID (`com.syntexco.livespace` → `com.syntexco.kineticdesk`) changed; the source tree's `LiveSpace/`/`Shared/` folder paths, internal type names, and the `~/Library/Application Support/LiveSpace/` storage location were deliberately left as-is (no user-facing benefit to churning them, and renaming the Application Support folder would've reset every existing install's settings). Everything below dated before that rename refers to the app by its old name/bundle ID/install path — read as historical record, not current naming.
 
 ## Xcode project
 
@@ -8,10 +10,10 @@ Managed via `xcodegen` (`project.yml` at repo root, NOT hand-edited in Xcode). A
 
 ```bash
 xcodegen generate
-xcodebuild -project LiveSpace.xcodeproj -scheme LiveSpace -configuration Debug build
+xcodebuild -project KineticDesk.xcodeproj -scheme KineticDesk -configuration Debug build
 ```
 
-`LiveSpace.xcodeproj` is generated output — don't hand-edit it, edit `project.yml`.
+`KineticDesk.xcodeproj` is generated output — don't hand-edit it, edit `project.yml`.
 
 Signing: team ID lives in gitignored `Config/Signing.xcconfig` (see `Config/Signing.xcconfig.example` for the key), not in `project.yml` or `project.pbxproj` — kept out of git since this repo is public. (Earlier confusion: certs cosmetically labeled with one team ID in the keychain were actually issued under the real paid team — confirmed via `openssl x509 -subject`, OU field is ground truth, not the keychain's display CN.) No Developer ID Application cert exists yet — Debug/Release both sign with "Apple Development", so distributed dmg needs right-click→Open once (Gatekeeper).
 

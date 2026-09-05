@@ -152,7 +152,7 @@ final class WallpaperWindow: NSWindow {
     }
 
     /// Sets this window's own `appearance`, independent of `NSApp.appearance` - lets the wallpaper's
-    /// dim treatment follow a different Light/Dark choice than LiveSpace's own Settings UI.
+    /// dim treatment follow a different Light/Dark choice than KineticDesk's own Settings UI.
     /// `mode.nsAppearance` is `nil` for `.system`, but `NSWindow.appearance = nil` falls back to
     /// `NSApp.appearance` (not the OS setting) when that's non-nil - which is exactly App Theme
     /// overriding Wallpaper Theme. Resolving `.system` to a concrete `NSAppearance` here, read

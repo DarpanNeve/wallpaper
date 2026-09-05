@@ -4,7 +4,7 @@ final class ConfigStore {
     static let shared = ConfigStore()
 
     private let fileURL: URL
-    private let queue = DispatchQueue(label: "com.syntexco.livespace.configstore")
+    private let queue = DispatchQueue(label: "com.syntexco.kineticdesk.configstore")
 
     private init() {
         let supportDir = FileManager.default

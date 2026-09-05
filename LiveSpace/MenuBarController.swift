@@ -47,7 +47,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         launchAtLoginItem.state = LaunchAtLogin.isEnabled ? .on : .off
         menu.addItem(launchAtLoginItem)
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit LiveSpace", action: #selector(quit), keyEquivalent: "q").target = self
+        menu.addItem(withTitle: "Quit KineticDesk", action: #selector(quit), keyEquivalent: "q").target = self
         statusItem.menu = menu
     }
 

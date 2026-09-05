@@ -17,7 +17,7 @@ enum PosterFrameSync {
     static func sync(videoURL: URL) {
         DispatchQueue.global(qos: .utility).async {
             guard let posterURL = generatePoster(for: videoURL) else {
-                NSLog("LiveSpace: poster generation failed for \(videoURL.lastPathComponent)")
+                NSLog("KineticDesk: poster generation failed for \(videoURL.lastPathComponent)")
                 return
             }
             DispatchQueue.main.async {
@@ -28,7 +28,7 @@ enum PosterFrameSync {
                         try NSWorkspace.shared.setDesktopImageURL(posterURL, for: screen, options: [:])
                     } catch {
                         allSucceeded = false
-                        NSLog("LiveSpace: setDesktopImageURL failed: \(error)")
+                        NSLog("KineticDesk: setDesktopImageURL failed: \(error)")
                     }
                 }
                 if allSucceeded {
@@ -38,7 +38,7 @@ enum PosterFrameSync {
         }
     }
 
-    /// Captures each screen's real Desktop Picture the first time LiveSpace ever touches it, so
+    /// Captures each screen's real Desktop Picture the first time KineticDesk ever touches it, so
     /// `restore()` can hand it back later. Only runs once per screen (by `stableID`, survives
     /// relaunches via `stateFile`) - later calls would just capture our own poster instead of the
     /// user's original.
@@ -70,7 +70,7 @@ enum PosterFrameSync {
                 try NSWorkspace.shared.setDesktopImageURL(originalURL, for: screen, options: [:])
                 restoredAny = true
             } catch {
-                NSLog("LiveSpace: restore setDesktopImageURL failed: \(error)")
+                NSLog("KineticDesk: restore setDesktopImageURL failed: \(error)")
             }
         }
         try? FileManager.default.removeItem(at: stateFile)

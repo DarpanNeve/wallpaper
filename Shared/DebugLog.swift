@@ -7,7 +7,7 @@ enum DebugLog {
         .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("LiveSpace/debug.log")
     private static let rotatedFileURL = fileURL.deletingLastPathComponent().appendingPathComponent("debug.log.1")
-    private static let queue = DispatchQueue(label: "com.syntexco.livespace.debuglog")
+    private static let queue = DispatchQueue(label: "com.syntexco.kineticdesk.debuglog")
 
     static func write(_ message: String) {
         queue.async {

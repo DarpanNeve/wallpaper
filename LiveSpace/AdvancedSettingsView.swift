@@ -13,7 +13,7 @@ struct AdvancedSettingsView: View {
                         }
                     }
                     .onChange(of: state.appearanceMode) { _, _ in state.appearanceModeChanged() }
-                    SettingsCaption("Controls LiveSpace's own windows. System follows your Mac's Light/Dark setting.")
+                    SettingsCaption("Controls KineticDesk's own windows. System follows your Mac's Light/Dark setting.")
 
                     LabeledSegmentedPicker("Wallpaper Theme", selection: $state.wallpaperAppearanceMode) {
                         ForEach(AppAppearance.allCases) { mode in
@@ -25,8 +25,8 @@ struct AdvancedSettingsView: View {
                 }
 
                 SettingsSection("Startup", systemImage: "power", tint: .gray) {
-                    Toggle("Launch LiveSpace at Login", isOn: launchAtLoginBinding)
-                    SettingsCaption("Automatically starts LiveSpace when you log in to your Mac.")
+                    Toggle("Launch KineticDesk at Login", isOn: launchAtLoginBinding)
+                    SettingsCaption("Automatically starts KineticDesk when you log in to your Mac.")
                 }
 
                 SettingsSection("Desktop Wallpaper Sync", systemImage: "photo.on.rectangle", tint: .teal) {

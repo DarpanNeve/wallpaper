@@ -157,7 +157,7 @@ final class AppState: ObservableObject {
 
     /// Applies immediately to every `WallpaperWindow` via `WallpaperAppearanceTrigger` - separate
     /// from `appearanceModeChanged()` above so the desktop's dim treatment can follow its own
-    /// Light/Dark choice instead of always mirroring LiveSpace's own window appearance.
+    /// Light/Dark choice instead of always mirroring KineticDesk's own window appearance.
     func wallpaperAppearanceModeChanged() {
         WallpaperAppearanceTrigger.shared.apply?(wallpaperAppearanceMode)
         persist()

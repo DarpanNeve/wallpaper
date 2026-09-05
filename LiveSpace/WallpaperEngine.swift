@@ -27,7 +27,7 @@ final class WallpaperEngine {
         )
     }
 
-    /// Applies independently of LiveSpace's own window appearance (`NSApp.appearance`, driven by
+    /// Applies independently of KineticDesk's own window appearance (`NSApp.appearance`, driven by
     /// `AppState.appearanceMode`) - each `WallpaperWindow` gets its own `appearance` override so the
     /// desktop's dim treatment can differ from the Settings UI's Light/Dark.
     func applyWallpaperAppearance(_ mode: AppAppearance) {

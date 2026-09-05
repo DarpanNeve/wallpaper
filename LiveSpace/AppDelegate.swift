@@ -44,8 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func requestLoginItemConsent() {
         let alert = NSAlert()
-        alert.messageText = "Launch LiveSpace at Login?"
-        alert.informativeText = "LiveSpace runs from the menu bar. Starting it automatically when you log in keeps your wallpaper rotating without needing to open it manually. You can change this anytime from the menu bar menu."
+        alert.messageText = "Launch KineticDesk at Login?"
+        alert.informativeText = "KineticDesk runs from the menu bar. Starting it automatically when you log in keeps your wallpaper rotating without needing to open it manually. You can change this anytime from the menu bar menu."
         alert.addButton(withTitle: "Launch at Login")
         alert.addButton(withTitle: "Not Now")
         alert.alertStyle = .informational
@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // `[.minSize, .maxSize]` keeps the `.frame(minWidth:...)` constraints synced without that.
         hostingController.sizingOptions = [.minSize, .maxSize]
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "LiveSpace"
+        window.title = "KineticDesk"
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.isReleasedWhenClosed = false
         window.center()
