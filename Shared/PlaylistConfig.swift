@@ -1,4 +1,30 @@
 import Foundation
+import AppKit
+
+enum AppAppearance: String, Codable, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+
+    /// `nil` for `.system` - clearing `NSApp.appearance` lets AppKit follow the OS setting again.
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+}
 
 enum VideoRenderPattern: String, Codable, CaseIterable, Identifiable {
     case fill
@@ -109,6 +135,7 @@ struct PlaylistConfig: Codable, Equatable {
     var orderPattern: PlaybackOrderPattern = .fromStart
     var perScreen: [String: ScreenConfig] = [:]
     var breakReminder: BreakReminderConfig = .default
+    var appearanceMode: AppAppearance = .system
 
     static let `default` = PlaylistConfig(
         folderPath: ("~/LiveWallpapers" as NSString).expandingTildeInPath,
@@ -136,7 +163,8 @@ struct PlaylistConfig: Codable, Equatable {
         renderPattern: VideoRenderPattern = .fill,
         orderPattern: PlaybackOrderPattern = .fromStart,
         perScreen: [String: ScreenConfig] = [:],
-        breakReminder: BreakReminderConfig = .default
+        breakReminder: BreakReminderConfig = .default,
+        appearanceMode: AppAppearance = .system
     ) {
         self.folderPath = folderPath
         self.intervalSeconds = intervalSeconds
@@ -150,6 +178,7 @@ struct PlaylistConfig: Codable, Equatable {
         self.orderPattern = orderPattern
         self.perScreen = perScreen
         self.breakReminder = breakReminder
+        self.appearanceMode = appearanceMode
     }
 
     init(from decoder: Decoder) throws {
@@ -166,6 +195,7 @@ struct PlaylistConfig: Codable, Equatable {
         orderPattern = try container.decodeIfPresent(PlaybackOrderPattern.self, forKey: .orderPattern) ?? .fromStart
         perScreen = try container.decodeIfPresent([String: ScreenConfig].self, forKey: .perScreen) ?? [:]
         breakReminder = try container.decodeIfPresent(BreakReminderConfig.self, forKey: .breakReminder) ?? .default
+        appearanceMode = try container.decode(AppAppearance.self, forKey: .appearanceMode)
     }
 
     /// Resolves the config a given screen should actually play - its own override if customized,

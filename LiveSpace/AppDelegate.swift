@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.appearance = state.appearanceMode.nsAppearance
         rotationController.start()
         BreakReminderController.shared.start()
 
@@ -53,9 +54,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makeSettingsWindow() -> NSWindow {
         let hostingController = NSHostingController(rootView: ContentView().environmentObject(state))
+        // Default `.standardBounds` includes `.intrinsicContentSize`, which keeps resizing the
+        // window to match the detail view's ideal size as it changes (e.g. the Library tab's grid
+        // growing as thumbnails load async) - causes a visible jump/reposition switching tabs.
+        // `[.minSize, .maxSize]` keeps the `.frame(minWidth:...)` constraints synced without that.
+        hostingController.sizingOptions = [.minSize, .maxSize]
         let window = NSWindow(contentViewController: hostingController)
         window.title = "LiveSpace"
-        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.isReleasedWhenClosed = false
         window.center()
         return window

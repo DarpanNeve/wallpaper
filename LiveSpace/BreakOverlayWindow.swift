@@ -5,9 +5,22 @@ final class BreakOverlayModel: ObservableObject {
     @Published var kind: BreakKind = .mini
     @Published var remainingSeconds: Int = 0
     @Published var tip: String = ""
+    @Published var accentColor: Color = .primary
+    @Published var material: Material = .regular
     var startTime: Date = Date()
     var duration: TimeInterval = 0
     var onSkip: () -> Void = {}
+}
+
+extension OverlayMaterial {
+    var swiftUIMaterial: Material {
+        switch self {
+        case .regular: return .regular
+        case .thick: return .thick
+        case .ultraThin: return .ultraThin
+        case .chrome: return .bar
+        }
+    }
 }
 
 private struct BreakOverlayView: View {
@@ -26,9 +39,10 @@ private struct BreakOverlayView: View {
             Button("Skip", action: model.onSkip)
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                .tint(model.accentColor)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
+        .background(model.material)
         .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
     }
 
@@ -52,7 +66,7 @@ private struct BreakOverlayView: View {
                     .stroke(.secondary.opacity(0.2), lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: 1 - progress)
-                    .stroke(.primary, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .stroke(model.accentColor, style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text(timeString)
                     .font(.system(size: 68, weight: .thin, design: .rounded))

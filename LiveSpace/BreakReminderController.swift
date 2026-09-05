@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 enum BreakKind {
     case mini
@@ -163,6 +164,7 @@ final class BreakReminderController {
     }
 
     private func trigger(_ kind: BreakKind, duration: TimeInterval) {
+        let config = ConfigStore.shared.load().breakReminder
         let now = Date()
         activeKind = kind
         breakEndTime = now.addingTimeInterval(duration)
@@ -171,7 +173,10 @@ final class BreakReminderController {
         overlayModel.startTime = now
         overlayModel.duration = duration
         overlayModel.tip = BreakTips.random()
-        overlayWindows = NSScreen.screens.map { BreakOverlayWindow(screen: $0, model: overlayModel) }
+        overlayModel.accentColor = Color(hex: config.accentColorHex)
+        overlayModel.material = config.overlayMaterial.swiftUIMaterial
+        let screens = config.showOnAllDisplays ? NSScreen.screens : [NSScreen.main].compactMap { $0 }
+        overlayWindows = screens.map { BreakOverlayWindow(screen: $0, model: overlayModel) }
         DebugLog.write("breakReminder: triggered \(kind) duration=\(duration)s screens=\(overlayWindows.count)")
     }
 

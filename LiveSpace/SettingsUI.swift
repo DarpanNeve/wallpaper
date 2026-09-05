@@ -1,22 +1,27 @@
 import SwiftUI
 
-/// Card-style settings section used across all Settings tabs - a labeled group with an icon,
-/// matching the native macOS System Settings look.
+/// Card-style settings section used across all Settings tabs - a labeled group with an icon
+/// badge, matching the colored-icon rows of the native macOS System Settings app.
 struct SettingsSection<Content: View>: View {
     let title: String
     let systemImage: String
+    var tint: Color = .accentColor
     @ViewBuilder let content: Content
 
-    init(_ title: String, systemImage: String, @ViewBuilder content: () -> Content) {
+    init(_ title: String, systemImage: String, tint: Color = .accentColor, @ViewBuilder content: () -> Content) {
         self.title = title
         self.systemImage = systemImage
+        self.tint = tint
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: systemImage)
-                .font(.headline)
+            HStack(spacing: 8) {
+                iconBadge
+                Text(title)
+                    .font(.headline)
+            }
             VStack(alignment: .leading, spacing: 10) {
                 content
             }
@@ -24,6 +29,14 @@ struct SettingsSection<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
         }
+    }
+
+    private var iconBadge: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 22, height: 22)
+            .background(tint.gradient, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 }
 

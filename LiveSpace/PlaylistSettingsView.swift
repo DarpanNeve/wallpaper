@@ -6,7 +6,7 @@ struct PlaylistSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                SettingsSection("Now Playing", systemImage: "play.circle") {
+                SettingsSection("Now Playing", systemImage: "play.circle", tint: .blue) {
                     if state.videoFileNames.isEmpty {
                         SettingsCaption("No videos found yet. Add some to your video folder below.")
                     } else {
@@ -25,7 +25,7 @@ struct PlaylistSettingsView: View {
                     }
                 }
 
-                SettingsSection("Video Folder", systemImage: "folder") {
+                SettingsSection("Video Folder", systemImage: "folder", tint: .orange) {
                     HStack {
                         Text(state.folderPath)
                             .font(.system(.body, design: .monospaced))
@@ -39,7 +39,7 @@ struct PlaylistSettingsView: View {
                         .font(.caption)
                 }
 
-                SettingsSection("Rotation", systemImage: "arrow.triangle.2.circlepath") {
+                SettingsSection("Rotation", systemImage: "arrow.triangle.2.circlepath", tint: .green) {
                     LabeledSegmentedPicker("Order", selection: $state.orderPattern) {
                         ForEach(PlaybackOrderPattern.allCases) { pattern in
                             Text(pattern.label).tag(pattern)
@@ -68,7 +68,7 @@ struct PlaylistSettingsView: View {
                     }
                 }
 
-                SettingsSection("Appearance", systemImage: "rectangle.compress.vertical") {
+                SettingsSection("Appearance", systemImage: "rectangle.compress.vertical", tint: .purple) {
                     LabeledSegmentedPicker("Fill Style", selection: $state.renderPattern) {
                         ForEach(VideoRenderPattern.allCases) { pattern in
                             Text(pattern.label).tag(pattern)

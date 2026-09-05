@@ -6,7 +6,7 @@ struct DisplaysSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                SettingsSection("Displays", systemImage: "display.2") {
+                SettingsSection("Displays", systemImage: "display.2", tint: .blue) {
                     if state.displayRows.isEmpty {
                         SettingsCaption("No displays detected.")
                     } else {
