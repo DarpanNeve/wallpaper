@@ -11,28 +11,13 @@ struct AdvancedSettingsView: View {
                     SettingsCaption("Automatically starts LiveSpace when you log in to your Mac.")
                 }
 
-                SettingsSection("Screen Saver Plugin", systemImage: "play.rectangle.on.rectangle") {
-                    HStack {
-                        Circle()
-                            .fill(state.installStatus == "Installed" ? Color.green : Color.orange)
-                            .frame(width: 8, height: 8)
-                        Text(state.installStatus)
-                        Spacer()
-                        Button("Uninstall") { state.uninstallSaver() }
-                            .disabled(state.installStatus != "Installed")
-                        Button("Install") { state.installSaver() }
-                    }
-                    SettingsCaption("After installing: System Settings → Screen Saver → select LiveSpace → enable \"Show as wallpaper\". Then System Settings → Lock Screen → enable \"Show screen saver\" for lock screen live wallpaper.")
-                    Button("Open System Settings") { state.openSystemSettings() }
-                }
-
                 SettingsSection("Desktop Wallpaper Sync", systemImage: "photo.on.rectangle") {
                     Toggle("Match system wallpaper to playlist", isOn: $state.posterSyncEnabled)
                         .onChange(of: state.posterSyncEnabled) { _, _ in state.posterSyncToggled() }
                     Text(state.posterSyncStatus)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    SettingsCaption("Updates System Settings → Wallpaper with a still frame from the current video, so the menu bar and Dock tint match what's playing. Your original wallpaper is backed up the first time this runs.")
+                    SettingsCaption("Keeps your system wallpaper in sync with the current video. Your original wallpaper is backed up automatically.")
                     Button("Restore Original Wallpaper") { state.restoreOriginalWallpaper() }
                         .font(.caption)
                 }
@@ -43,7 +28,7 @@ struct AdvancedSettingsView: View {
                     Text(state.lockScreenStatus)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    SettingsCaption("Experimental: uses an undocumented macOS mechanism (replaces a downloaded Apple Aerial wallpaper's video file). Could break on a future macOS update. Requires selecting an Apple Aerial as your Screen Saver first, with \"Show screen saver on lock screen\" enabled in System Settings.")
+                    SettingsCaption("Experimental — may stop working after a macOS update. Requires an Apple Aerial wallpaper selected in Screen Saver settings first.")
                     Button("Restore Original Lock Screen") { state.restoreOriginalLockScreen() }
                         .font(.caption)
                 }
@@ -65,7 +50,7 @@ struct AdvancedSettingsView: View {
                         breakSliderRow("Break for", value: $state.longBreakDurationSeconds, range: 30...900, step: 30, suffix: "sec", asMinutesPast: 60)
                     }
 
-                    SettingsCaption("Shows a small floating window on every display when a break is due. Pauses while the system is idle. Skip, Pause, and Reset are in the menu bar.")
+                    SettingsCaption("Shows a small floating window on every display when a break is due. Skip, Pause, and Reset are in the menu bar.")
                 }
             }
             .padding(24)

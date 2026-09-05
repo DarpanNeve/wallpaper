@@ -26,7 +26,6 @@ final class AppState: ObservableObject {
     @Published var folderPath: String
     @Published var intervalMinutes: Double
     @Published var videoCount: Int = 0
-    @Published var installStatus: String = "Not installed"
     @Published var lockScreenEnabled: Bool
     @Published var lockScreenStatus: String = ""
     @Published var posterSyncEnabled: Bool
@@ -65,7 +64,6 @@ final class AppState: ObservableObject {
         longBreakIntervalMinutes = config.breakReminder.longBreakIntervalMinutes
         refreshVideoCount()
         refreshDisplays()
-        refreshInstallStatus()
         refreshLockScreenStatus()
         refreshPosterSyncStatus()
     }
@@ -171,6 +169,8 @@ final class AppState: ObservableObject {
         jumpToVideo(index: (currentVideoIndex + 1) % videoFileNames.count)
     }
 
+    // Undocumented mechanism: overwrites the .mov file backing a downloaded Apple Aerial
+    // wallpaper slot, then kills WallpaperAgent to force a reload. No public API exists for this.
     func lockScreenToggled() {
         persist()
         refreshLockScreenStatus()
@@ -192,6 +192,9 @@ final class AppState: ObservableObject {
         }
     }
 
+    // Extracts a still frame from the current video and calls NSWorkspace.setDesktopImageURL
+    // so the menu bar/Dock tint matches the video playing in our overlay window (which the OS
+    // doesn't otherwise know about). Original desktopImageURL is captured before the first write.
     func posterSyncToggled() {
         persist()
         refreshPosterSyncStatus()
@@ -340,29 +343,4 @@ final class AppState: ObservableObject {
         refreshDisplays()
     }
 
-    func installSaver() {
-        do {
-            try SaverInstaller.install()
-            refreshInstallStatus()
-        } catch {
-            installStatus = "Install failed: \(error.localizedDescription)"
-        }
-    }
-
-    func uninstallSaver() {
-        do {
-            try SaverInstaller.uninstall()
-            refreshInstallStatus()
-        } catch {
-            installStatus = "Uninstall failed: \(error.localizedDescription)"
-        }
-    }
-
-    func refreshInstallStatus() {
-        installStatus = SaverInstaller.isInstalled() ? "Installed" : "Not installed"
-    }
-
-    func openSystemSettings() {
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:")!)
-    }
 }
