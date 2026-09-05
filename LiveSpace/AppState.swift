@@ -48,6 +48,7 @@ final class AppState: ObservableObject {
     @Published var overlayMaterial: OverlayMaterial
     @Published var libraryItems: [LibraryVideoItem] = []
     @Published var appearanceMode: AppAppearance
+    @Published var wallpaperAppearanceMode: AppAppearance
 
     private var refreshTimer: Timer?
 
@@ -71,6 +72,7 @@ final class AppState: ObservableObject {
         accentColorHex = config.breakReminder.accentColorHex
         overlayMaterial = config.breakReminder.overlayMaterial
         appearanceMode = config.appearanceMode
+        wallpaperAppearanceMode = config.wallpaperAppearanceMode
         refreshVideoCount()
         refreshDisplays()
         refreshLockScreenStatus()
@@ -135,6 +137,7 @@ final class AppState: ObservableObject {
             config.orderPattern = self.orderPattern
             config.breakReminder = self.breakReminderConfigSnapshot()
             config.appearanceMode = self.appearanceMode
+            config.wallpaperAppearanceMode = self.wallpaperAppearanceMode
         }
         refreshVideoCount()
         refreshDisplays()
@@ -149,6 +152,14 @@ final class AppState: ObservableObject {
     /// lets AppKit fall back to following the OS setting again.
     func appearanceModeChanged() {
         NSApp.appearance = appearanceMode.nsAppearance
+        persist()
+    }
+
+    /// Applies immediately to every `WallpaperWindow` via `WallpaperAppearanceTrigger` - separate
+    /// from `appearanceModeChanged()` above so the desktop's dim treatment can follow its own
+    /// Light/Dark choice instead of always mirroring LiveSpace's own window appearance.
+    func wallpaperAppearanceModeChanged() {
+        WallpaperAppearanceTrigger.shared.apply?(wallpaperAppearanceMode)
         persist()
     }
 

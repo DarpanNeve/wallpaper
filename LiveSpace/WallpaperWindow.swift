@@ -151,6 +151,21 @@ final class WallpaperWindow: NSWindow {
         queuePlayer.play()
     }
 
+    /// Sets this window's own `appearance`, independent of `NSApp.appearance` - lets the wallpaper's
+    /// dim treatment follow a different Light/Dark choice than LiveSpace's own Settings UI.
+    /// `mode.nsAppearance` is `nil` for `.system`, but `NSWindow.appearance = nil` falls back to
+    /// `NSApp.appearance` (not the OS setting) when that's non-nil - which is exactly App Theme
+    /// overriding Wallpaper Theme. Resolving `.system` to a concrete `NSAppearance` here, read
+    /// straight from the OS default rather than through `NSApp`, breaks that inheritance.
+    func applyAppearance(_ mode: AppAppearance) {
+        appearance = mode.nsAppearance ?? NSAppearance(named: Self.systemIsDark() ? .darkAqua : .aqua)
+        updateDimLayer()
+    }
+
+    private static func systemIsDark() -> Bool {
+        UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+    }
+
     private func updateDimLayer() {
         let isDarkMode = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         dimLayer.opacity = isDarkMode ? Self.darkModeDimOpacity : 0

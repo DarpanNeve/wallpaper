@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = state.appearanceMode.nsAppearance
+        wallpaperEngine.applyWallpaperAppearance(state.wallpaperAppearanceMode)
         rotationController.start()
         BreakReminderController.shared.start()
 

@@ -7,13 +7,21 @@ struct AdvancedSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsSection("Appearance", systemImage: "circle.lefthalf.filled", tint: .black) {
-                    LabeledSegmentedPicker("Theme", selection: $state.appearanceMode) {
+                    LabeledSegmentedPicker("App Theme", selection: $state.appearanceMode) {
                         ForEach(AppAppearance.allCases) { mode in
                             Text(mode.label).tag(mode)
                         }
                     }
                     .onChange(of: state.appearanceMode) { _, _ in state.appearanceModeChanged() }
                     SettingsCaption("Controls LiveSpace's own windows. System follows your Mac's Light/Dark setting.")
+
+                    LabeledSegmentedPicker("Wallpaper Theme", selection: $state.wallpaperAppearanceMode) {
+                        ForEach(AppAppearance.allCases) { mode in
+                            Text(mode.label).tag(mode)
+                        }
+                    }
+                    .onChange(of: state.wallpaperAppearanceMode) { _, _ in state.wallpaperAppearanceModeChanged() }
+                    SettingsCaption("Controls the dim treatment on your desktop video. Can be set independently of App Theme above.")
                 }
 
                 SettingsSection("Startup", systemImage: "power", tint: .gray) {

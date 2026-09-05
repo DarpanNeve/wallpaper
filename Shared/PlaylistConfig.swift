@@ -136,6 +136,7 @@ struct PlaylistConfig: Codable, Equatable {
     var perScreen: [String: ScreenConfig] = [:]
     var breakReminder: BreakReminderConfig = .default
     var appearanceMode: AppAppearance = .system
+    var wallpaperAppearanceMode: AppAppearance = .system
 
     static let `default` = PlaylistConfig(
         folderPath: ("~/LiveWallpapers" as NSString).expandingTildeInPath,
@@ -164,7 +165,8 @@ struct PlaylistConfig: Codable, Equatable {
         orderPattern: PlaybackOrderPattern = .fromStart,
         perScreen: [String: ScreenConfig] = [:],
         breakReminder: BreakReminderConfig = .default,
-        appearanceMode: AppAppearance = .system
+        appearanceMode: AppAppearance = .system,
+        wallpaperAppearanceMode: AppAppearance = .system
     ) {
         self.folderPath = folderPath
         self.intervalSeconds = intervalSeconds
@@ -179,6 +181,7 @@ struct PlaylistConfig: Codable, Equatable {
         self.perScreen = perScreen
         self.breakReminder = breakReminder
         self.appearanceMode = appearanceMode
+        self.wallpaperAppearanceMode = wallpaperAppearanceMode
     }
 
     init(from decoder: Decoder) throws {
@@ -195,7 +198,8 @@ struct PlaylistConfig: Codable, Equatable {
         orderPattern = try container.decodeIfPresent(PlaybackOrderPattern.self, forKey: .orderPattern) ?? .fromStart
         perScreen = try container.decodeIfPresent([String: ScreenConfig].self, forKey: .perScreen) ?? [:]
         breakReminder = try container.decodeIfPresent(BreakReminderConfig.self, forKey: .breakReminder) ?? .default
-        appearanceMode = try container.decode(AppAppearance.self, forKey: .appearanceMode)
+        appearanceMode = try container.decodeIfPresent(AppAppearance.self, forKey: .appearanceMode) ?? .system
+        wallpaperAppearanceMode = try container.decodeIfPresent(AppAppearance.self, forKey: .wallpaperAppearanceMode) ?? .system
     }
 
     /// Resolves the config a given screen should actually play - its own override if customized,
