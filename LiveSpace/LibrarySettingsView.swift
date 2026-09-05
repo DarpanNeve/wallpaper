@@ -79,11 +79,18 @@ private struct LibraryVideoCell: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(.quaternary.opacity(0.4))
                 if let thumbnail = item.thumbnail {
-                    Image(nsImage: thumbnail)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
+                    // GeometryReader pins the frame to the PROPOSED size only, never the
+                    // image's own intrinsic pixel size - without it, `Image` still leaks its
+                    // natural dimensions upward as an ideal-size hint that `LazyVGrid` can
+                    // fold into that row's column-width negotiation, desyncing one row's
+                    // column widths from every other row's.
+                    GeometryReader { geo in
+                        Image(nsImage: thumbnail)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    }
                 } else {
                     ProgressView()
                         .controlSize(.small)
